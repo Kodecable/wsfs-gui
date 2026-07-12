@@ -1,0 +1,39 @@
+# xmake
+.xmake/
+build/
+
+# C++ build artifacts
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.a
+*.lib
+*.pdb
+*.ilk
+*.exp
+
+# Qt generated files
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.rcc
+
+# IDE
+.vscode/
+.idea/
+*.user
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

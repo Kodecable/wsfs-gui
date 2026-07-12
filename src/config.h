@@ -1,0 +1,6 @@
+#pragma once
+
+#define CONFIG_VERSION "0.1.0"
+#define CONFIG_VERSION_MAJOR 0
+#define CONFIG_VERSION_MINOR 1
+#define CONFIG_VERSION_ALTER 0

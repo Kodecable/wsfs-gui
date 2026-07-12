@@ -1,0 +1,7 @@
+BasedOnStyle:  Microsoft
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortBlocksOnASingleLine: true
+AllowShortLambdasOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
