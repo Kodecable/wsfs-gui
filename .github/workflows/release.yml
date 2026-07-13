@@ -114,6 +114,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/linuxdeploy"
           curl -L --fail -o "$RUNNER_TEMP/linuxdeploy/linuxdeploy.AppImage" https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/linuxdeploy-x86_64.AppImage
           curl -L --fail -o "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt.AppImage" https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/1-alpha-20250213-1/linuxdeploy-plugin-qt-x86_64.AppImage
+          curl -L --fail -o "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-appimage.AppImage" https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/1-alpha-20250213-1/linuxdeploy-plugin-appimage-x86_64.AppImage
           chmod +x "$RUNNER_TEMP/linuxdeploy"/*.AppImage
           cd "$RUNNER_TEMP/linuxdeploy"
           ./linuxdeploy.AppImage --appimage-extract >/dev/null
@@ -126,6 +127,12 @@ jobs:
           install -Dm755 "$plugin" "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt"
           rm -rf squashfs-root
           rm -f "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt.AppImage"
+          ./linuxdeploy-plugin-appimage.AppImage --appimage-extract >/dev/null
+          plugin="$(find squashfs-root -type f -name linuxdeploy-plugin-appimage | head -n 1)"
+          test -n "$plugin"
+          install -Dm755 "$plugin" "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-appimage"
+          rm -rf squashfs-root
+          rm -f "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-appimage.AppImage"
           echo "$RUNNER_TEMP/linuxdeploy" >> "$GITHUB_PATH"
       - name: Build AppImage
         shell: bash
