@@ -24,6 +24,26 @@ target("qtkeychain")
     add_frameworks("QtCore")
 
     if is_plat("linux") then
+        on_load(function (target)
+            import("lib.detect.find_tool")
+
+            local output_dir = "3rdparty/qtkeychain/generated"
+            local output_prefix = path.join(output_dir, "kwallet_interface")
+            local xml_file = "3rdparty/qtkeychain/qtkeychain/org.kde.KWallet.xml"
+            local header_file = output_prefix .. ".h"
+            local source_file = output_prefix .. ".cpp"
+
+            if not os.isfile(header_file) or not os.isfile(source_file) or
+               os.mtime(xml_file) > os.mtime(header_file) or
+               os.mtime(xml_file) > os.mtime(source_file) then
+                local qdbusxml2cpp = find_tool("qdbusxml2cpp")
+                assert(qdbusxml2cpp and qdbusxml2cpp.program,
+                    "qdbusxml2cpp was not found; install a Qt SDK with Qt DBus tools")
+                os.mkdir(output_dir)
+                os.vrunv(qdbusxml2cpp.program, {"-p", output_prefix, "-c", "KWalletInterface", xml_file})
+            end
+        end)
+
         add_defines("KEYCHAIN_DBUS=1", "HAVE_LIBSECRET=1")
         add_frameworks("QtDBus")
         add_packages("pkgconfig::libsecret-1")
