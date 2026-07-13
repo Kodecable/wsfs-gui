@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=WSFS GUI
+Comment=Graphical client for WSFS
+Exec=wsfs-gui
+Icon=wsfs-gui
+Categories=Network;Utility;
+Terminal=false
+StartupNotify=true

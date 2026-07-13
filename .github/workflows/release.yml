@@ -1,0 +1,162 @@
+name: Release packages
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to package (tag or commit SHA)
+        required: true
+        type: string
+      version:
+        description: GUI version without the v prefix
+        required: true
+        type: string
+      wsfs_core_tag:
+        description: Published Kodecable/wsfs-core release tag
+        required: true
+        type: string
+      release_tag:
+        description: Tag for the draft GUI GitHub Release
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    outputs:
+      ref: ${{ steps.values.outputs.ref }}
+      version: ${{ steps.values.outputs.version }}
+      core_tag: ${{ steps.values.outputs.core_tag }}
+      release_tag: ${{ steps.values.outputs.release_tag }}
+      qt_version: ${{ steps.values.outputs.qt_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.sha }}
+      - id: values
+        shell: bash
+        run: |
+          set -euo pipefail
+          source release/versions.env
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+            ref="${GITHUB_SHA}"
+            version="${GITHUB_REF_NAME#v}"
+            core_tag="${WSFS_CORE_TAG}"
+            release_tag="${GITHUB_REF_NAME}"
+          else
+            ref="${{ inputs.ref }}"
+            version="${{ inputs.version }}"
+            core_tag="${{ inputs.wsfs_core_tag }}"
+            release_tag="${{ inputs.release_tag }}"
+            [[ "${release_tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'release_tag must be vX.Y.Z' >&2; exit 1; }
+          fi
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "core_tag=${core_tag}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "qt_version=${QT_VERSION}" >> "$GITHUB_OUTPUT"
+
+  linux-appimage:
+    needs: resolve
+    runs-on: ubuntu-24.04
+    container: ubuntu:20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+      - name: Install build tools
+        shell: bash
+        env:
+          QT_VERSION: ${{ needs.resolve.outputs.qt_version }}
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl file git libsecret-1-dev patchelf python3 python3-pip
+          pip3 install 'aqtinstall==3.1.19'
+          aqt install-qt linux desktop "${QT_VERSION}" gcc_64 --outputdir "$RUNNER_TEMP/Qt"
+          echo "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin" >> "$GITHUB_PATH"
+      - uses: xmake-io/github-action-setup-xmake@v1
+      - name: Fetch linuxdeploy and Qt plugin
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/linuxdeploy"
+          curl -L --fail -o "$RUNNER_TEMP/linuxdeploy/linuxdeploy.AppImage" https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/linuxdeploy-x86_64.AppImage
+          curl -L --fail -o "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt.AppImage" https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/1-alpha-20250213-1/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x "$RUNNER_TEMP/linuxdeploy"/*.AppImage
+          cd "$RUNNER_TEMP/linuxdeploy"
+          ./linuxdeploy.AppImage --appimage-extract >/dev/null
+          mv squashfs-root/AppRun linuxdeploy
+          rm -rf squashfs-root
+          ./linuxdeploy-plugin-qt.AppImage --appimage-extract >/dev/null
+          plugin="$(find squashfs-root -type f -name linuxdeploy-plugin-qt | head -n 1)"
+          install -Dm755 "$plugin" "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt"
+          rm -rf squashfs-root
+          echo "$RUNNER_TEMP/linuxdeploy" >> "$GITHUB_PATH"
+      - name: Build AppImage
+        shell: bash
+        env:
+          LINUXDEPLOY: ${{ runner.temp }}/linuxdeploy/linuxdeploy
+        run: release/linux/build-appimage.sh "${{ needs.resolve.outputs.version }}" "${{ needs.resolve.outputs.core_tag }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist/*.AppImage
+
+  windows-installer:
+    needs: resolve
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+      - name: Install Qt and Qt Installer Framework
+        shell: pwsh
+        env:
+          QT_VERSION: ${{ needs.resolve.outputs.qt_version }}
+        run: |
+          python -m pip install 'aqtinstall==3.1.19'
+          aqt install-qt windows desktop "$env:QT_VERSION" win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
+          aqt install-tool windows desktop tools_ifw --outputdir "$env:RUNNER_TEMP/QtTools"
+      - uses: xmake-io/github-action-setup-xmake@v1
+      - name: Build Qt Installer Framework package
+        shell: pwsh
+        run: |
+          release/windows/build-installer.ps1 `
+            -GuiVersion "${{ needs.resolve.outputs.version }}" `
+            -CoreTag "${{ needs.resolve.outputs.core_tag }}" `
+            -QtRoot "$env:RUNNER_TEMP/Qt" `
+            -IfwRoot "$env:RUNNER_TEMP/QtTools"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist-installer/*.exe
+
+  create-draft-release:
+    needs: [resolve, linux-appimage, windows-installer]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+      - name: Create checksums
+        shell: bash
+        run: |
+          cd release-assets
+          find . -type f \( -name '*.AppImage' -o -name '*.exe' \) -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+      - name: Create or update draft GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.resolve.outputs.release_tag }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          overwrite_files: true
+          files: |
+            release-assets/**/*.AppImage
+            release-assets/**/*.exe
+            release-assets/SHA256SUMS.txt

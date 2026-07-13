@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>WSFS GUI</Name>
+    <Version>@GUI_VERSION@</Version>
+    <Title>WSFS GUI 安装程序</Title>
+    <Publisher>Kodecable</Publisher>
+    <StartMenuDir>WSFS GUI</StartMenuDir>
+    <TargetDir>@HomeDir@/AppData/Local/Programs/WSFS GUI</TargetDir>
+    <MaintenanceToolName>WSFS-GUI-MaintenanceTool</MaintenanceToolName>
+</Installer>

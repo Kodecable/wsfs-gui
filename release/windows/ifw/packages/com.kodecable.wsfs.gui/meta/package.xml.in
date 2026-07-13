@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>WSFS GUI</DisplayName>
+    <Description>WSFS 图形界面及其运行时组件</Description>
+    <Version>@GUI_VERSION@</Version>
+    <ReleaseDate>@RELEASE_DATE@</ReleaseDate>
+    <Default>true</Default>
+    <Essential>true</Essential>
+    <Licenses>
+        <License name="BSD-3-Clause" file="LICENSE.txt" />
+    </Licenses>
+    <Script>installscript.qs</Script>
+</Package>
