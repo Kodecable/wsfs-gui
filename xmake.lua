@@ -4,7 +4,9 @@ set_config("qt_sdkver", "6")
 
 includes("xmake/auto_qrc.lua")
 
-add_requires("pkgconfig::libsecret-1", {system = true})
+if is_plat("linux") then
+    add_requires("pkgconfig::libsecret-1", {system = true})
+end
 
 set_version()
 
