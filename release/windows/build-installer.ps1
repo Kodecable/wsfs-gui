@@ -47,7 +47,9 @@ if (Test-Path $ifwStage) { Remove-Item -Recurse -Force $ifwStage }
 New-Item -ItemType Directory -Force $ifwStage | Out-Null
 Copy-Item -Recurse (Join-Path $rootDir "release/windows/ifw/config") $ifwStage
 Copy-Item -Recurse (Join-Path $rootDir "release/windows/ifw/packages") $ifwStage
-Copy-Item -Recurse -Force (Join-Path $stageDir "*") (Join-Path $ifwStage "packages/com.kodecable.wsfs.gui/data")
+$packageDataDir = Join-Path $ifwStage "packages/com.kodecable.wsfs.gui/data"
+New-Item -ItemType Directory -Force $packageDataDir | Out-Null
+Copy-Item -Recurse -Force (Join-Path $stageDir "*") $packageDataDir
 Copy-Item (Join-Path $rootDir "LICENSE") (Join-Path $ifwStage "packages/com.kodecable.wsfs.gui/meta/LICENSE.txt")
 
 $releaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")

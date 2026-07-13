@@ -67,17 +67,20 @@ jobs:
     runs-on: ubuntu-24.04
     container: ubuntu:20.04
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.resolve.outputs.ref }}
-          submodules: recursive
-      - name: Install build tools
+      - name: Check out source and install build tools
         shell: bash
         env:
           QT_VERSION: ${{ needs.resolve.outputs.qt_version }}
+          SOURCE_REF: ${{ needs.resolve.outputs.ref }}
         run: |
+          set -euo pipefail
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl file git libsecret-1-dev patchelf python3 python3-pip
+          git init "$GITHUB_WORKSPACE"
+          git -C "$GITHUB_WORKSPACE" remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -C "$GITHUB_WORKSPACE" fetch --depth=1 origin "$SOURCE_REF"
+          git -C "$GITHUB_WORKSPACE" checkout --detach FETCH_HEAD
+          git -C "$GITHUB_WORKSPACE" submodule update --init --recursive
           pip3 install 'aqtinstall==3.1.18'
           aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
           test -x "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin/qmake"
