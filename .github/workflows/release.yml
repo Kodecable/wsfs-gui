@@ -95,7 +95,7 @@ jobs:
           git -C "$GITHUB_WORKSPACE" checkout --detach FETCH_HEAD
           git -C "$GITHUB_WORKSPACE" submodule update --init --recursive
           pip3 install 'aqtinstall==3.1.18'
-          aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 -m qtwayland --outputdir "$RUNNER_TEMP/Qt"
+          aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
           test -x "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin/qmake"
           qt_root="$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64"
           platform_plugin_dir="$qt_root/plugins/platforms"
