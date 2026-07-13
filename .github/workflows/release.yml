@@ -70,6 +70,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.resolve.outputs.ref }}
+          submodules: recursive
       - name: Install build tools
         shell: bash
         env:
@@ -102,7 +103,7 @@ jobs:
         shell: bash
         env:
           LINUXDEPLOY: ${{ runner.temp }}/linuxdeploy/linuxdeploy
-        run: release/linux/build-appimage.sh "${{ needs.resolve.outputs.version }}" "${{ needs.resolve.outputs.core_tag }}"
+        run: bash release/linux/build-appimage.sh "${{ needs.resolve.outputs.version }}" "${{ needs.resolve.outputs.core_tag }}"
       - uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
@@ -115,6 +116,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.resolve.outputs.ref }}
+          submodules: recursive
       - name: Install Qt and Qt Installer Framework
         shell: pwsh
         env:
