@@ -107,6 +107,7 @@ jobs:
           plugin="$(find squashfs-root -type f -name linuxdeploy-plugin-qt | head -n 1)"
           install -Dm755 "$plugin" "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt"
           rm -rf squashfs-root
+          rm -f "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt.AppImage"
           echo "$RUNNER_TEMP/linuxdeploy" >> "$GITHUB_PATH"
       - name: Build AppImage
         shell: bash
