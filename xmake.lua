@@ -24,8 +24,8 @@ target("qtkeychain")
     add_frameworks("QtCore")
 
     if is_plat("linux") then
-        on_load(function (target)
-            import("lib.detect.find_tool")
+        on_config(function (target)
+            import("lib.detect.find_file")
 
             local output_dir = "3rdparty/qtkeychain/generated"
             local output_prefix = path.join(output_dir, "kwallet_interface")
@@ -36,11 +36,17 @@ target("qtkeychain")
             if not os.isfile(header_file) or not os.isfile(source_file) or
                os.mtime(xml_file) > os.mtime(header_file) or
                os.mtime(xml_file) > os.mtime(source_file) then
-                local qdbusxml2cpp = find_tool("qdbusxml2cpp")
-                assert(qdbusxml2cpp and qdbusxml2cpp.program,
-                    "qdbusxml2cpp was not found; install a Qt SDK with Qt DBus tools")
+                local qt = assert(target:data("qt"), "Qt SDK not found!")
+                local search_dirs = {}
+                if qt.bindir_host then table.insert(search_dirs, qt.bindir_host) end
+                if qt.bindir then table.insert(search_dirs, qt.bindir) end
+                if qt.libexecdir_host then table.insert(search_dirs, qt.libexecdir_host) end
+                if qt.libexecdir then table.insert(search_dirs, qt.libexecdir) end
+                local qdbusxml2cpp = find_file(is_host("windows") and "qdbusxml2cpp.exe" or "qdbusxml2cpp", search_dirs)
+                assert(qdbusxml2cpp,
+                    "qdbusxml2cpp was not found in the configured Qt SDK")
                 os.mkdir(output_dir)
-                os.vrunv(qdbusxml2cpp.program, {"-p", output_prefix, "-c", "KWalletInterface", xml_file})
+                os.vrunv(qdbusxml2cpp, {"-p", output_prefix, "-c", "KWalletInterface", xml_file})
             end
         end)
 
