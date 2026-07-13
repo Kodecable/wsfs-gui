@@ -38,7 +38,10 @@ install -Dm755 "${core_dir}/wsfs-linux-amd64" "${stage_dir}/usr/bin/wsfs"
 
 # qtkeychain loads libsecret lazily through QLibrary("secret-1"), so a regular ELF dependency scan cannot see it.
 # Pass it explicitly to linuxdeploy so the AppImage can load the client library on hosts without libsecret installed.
-libsecret_path="$(ldconfig -p | awk '/libsecret-1\\.so\\.0/{print $NF; exit}')"
+libsecret_path="$(ldconfig -p 2>/dev/null | awk '/libsecret-1\\.so\\.0/{print $NF; exit}')"
+if [[ -z "${libsecret_path}" ]]; then
+  libsecret_path="$(find -L /usr/lib /lib -name 'libsecret-1.so.0' -type f -print -quit 2>/dev/null)"
+fi
 [[ -n "${libsecret_path}" ]] || { echo "libsecret-1.so.0 was not found" >&2; exit 1; }
 
 rm -f "${output_dir}/WSFS-GUI-${version}-x86_64.AppImage"
