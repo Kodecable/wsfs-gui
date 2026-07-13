@@ -10,6 +10,7 @@ linuxdeploy_bin="${LINUXDEPLOY:?LINUXDEPLOY must point to linuxdeploy}"
 
 command -v xmake >/dev/null || { echo "xmake is required" >&2; exit 1; }
 command -v curl >/dev/null || { echo "curl is required" >&2; exit 1; }
+command -v convert >/dev/null || { echo "ImageMagick convert is required" >&2; exit 1; }
 
 cd "${root_dir}"
 xmake f -p linux -a x86_64 -m release
@@ -23,11 +24,13 @@ output_dir="${root_dir}/dist"
 rm -rf "${stage_dir}"
 mkdir -p "${stage_dir}/usr/bin" \
          "${stage_dir}/usr/share/applications" \
-         "${stage_dir}/usr/share/icons/hicolor/256x256/apps"
+         "${stage_dir}/usr/share/icons/hicolor/512x512/apps"
 
 install -Dm755 "${gui_binary}" "${stage_dir}/usr/bin/wsfs-gui"
 install -Dm644 release/linux/wsfs-gui.desktop "${stage_dir}/usr/share/applications/wsfs-gui.desktop"
-install -Dm644 src/assets/app-icon.png "${stage_dir}/usr/share/icons/hicolor/256x256/apps/wsfs-gui.png"
+# linuxdeploy accepts a maximum raster icon size of 512x512. Keep the 1024x1024 source
+# in the repository and derive the AppImage icon at packaging time.
+convert src/assets/app-icon.png -resize 512x512 -define png:color-type=6 "${stage_dir}/usr/share/icons/hicolor/512x512/apps/wsfs-gui.png"
 
 core_dir="$(mktemp -d)"
 trap 'rm -rf "${core_dir}"' EXIT
@@ -48,7 +51,7 @@ rm -f "${output_dir}/WSFS-GUI-${version}-x86_64.AppImage"
 ARCH=x86_64 "${linuxdeploy_bin}" \
   --appdir "${stage_dir}" \
   --desktop-file "${stage_dir}/usr/share/applications/wsfs-gui.desktop" \
-  --icon-file "${stage_dir}/usr/share/icons/hicolor/256x256/apps/wsfs-gui.png" \
+  --icon-file "${stage_dir}/usr/share/icons/hicolor/512x512/apps/wsfs-gui.png" \
   --executable "${stage_dir}/usr/bin/wsfs-gui" \
   --library "${libsecret_path}" \
   --plugin qt \
