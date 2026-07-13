@@ -99,7 +99,9 @@ jobs:
           chmod +x "$RUNNER_TEMP/linuxdeploy"/*.AppImage
           cd "$RUNNER_TEMP/linuxdeploy"
           ./linuxdeploy.AppImage --appimage-extract >/dev/null
-          mv squashfs-root/AppRun linuxdeploy
+          linuxdeploy_binary="$(find squashfs-root -type f -name linuxdeploy -perm -u+x | head -n 1)"
+          test -n "$linuxdeploy_binary"
+          install -Dm755 "$linuxdeploy_binary" "$RUNNER_TEMP/linuxdeploy/linuxdeploy"
           rm -rf squashfs-root
           ./linuxdeploy-plugin-qt.AppImage --appimage-extract >/dev/null
           plugin="$(find squashfs-root -type f -name linuxdeploy-plugin-qt | head -n 1)"
