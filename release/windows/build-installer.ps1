@@ -16,9 +16,13 @@ function Find-Tool([string]$Root, [string]$Name) {
 }
 
 $windeployqt = Find-Tool $QtRoot "windeployqt.exe"
+$qmake = Find-Tool $QtRoot "qmake.exe"
 $binarycreator = Find-Tool $IfwRoot "binarycreator.exe"
+$qtSdkDir = $qmake.Directory.Parent.FullName
+$env:QTDIR = $qtSdkDir
+$env:Path = "$($qmake.Directory.FullName);$env:Path"
 
-xmake f -p windows -a x64 -m release --toolchain=msvc
+xmake f -p windows -a x64 -m release --toolchain=msvc "--qt=$qtSdkDir"
 xmake build wsfs-gui
 
 $guiBinary = Get-ChildItem -Path (Join-Path $rootDir "build") -Filter "wsfs-gui.exe" -Recurse -File | Select-Object -First 1

@@ -78,7 +78,7 @@ jobs:
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl file git libsecret-1-dev patchelf python3 python3-pip
           pip3 install 'aqtinstall==3.1.18'
-          aqt install-qt linux desktop "${QT_VERSION}" gcc_64 --outputdir "$RUNNER_TEMP/Qt"
+          aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
           test -x "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin/qmake"
           echo "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin" >> "$GITHUB_PATH"
       - uses: xmake-io/github-action-setup-xmake@v1
@@ -126,6 +126,11 @@ jobs:
           if ($null -eq (Get-ChildItem -Path "$env:RUNNER_TEMP/Qt" -Filter "windeployqt.exe" -Recurse -File | Select-Object -First 1)) {
             throw "Qt installation completed without windeployqt.exe"
           }
+          $qmake = Get-ChildItem -Path "$env:RUNNER_TEMP/Qt" -Filter "qmake.exe" -Recurse -File | Select-Object -First 1
+          if ($null -eq $qmake) { throw "Qt installation completed without qmake.exe" }
+          $qtSdkDir = $qmake.Directory.Parent.FullName
+          Add-Content -Path $env:GITHUB_PATH -Value $qmake.Directory.FullName
+          Add-Content -Path $env:GITHUB_ENV -Value "QTDIR=$qtSdkDir"
           aqt install-tool windows desktop tools_ifw --outputdir "$env:RUNNER_TEMP/QtTools"
           if ($LASTEXITCODE -ne 0) { throw "Installing Qt Installer Framework failed" }
       - uses: xmake-io/github-action-setup-xmake@v1
