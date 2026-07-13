@@ -48,6 +48,9 @@ fi
 [[ -n "${libsecret_path}" ]] || { echo "libsecret-1.so.0 was not found" >&2; exit 1; }
 
 rm -f "${output_dir}/WSFS-GUI-${version}-x86_64.AppImage"
+QML_SOURCES_PATHS="${root_dir}/src" \
+EXTRA_QT_PLUGINS=waylandcompositor \
+EXTRA_PLATFORM_PLUGINS='libqwayland-egl.so;libqwayland-generic.so' \
 ARCH=x86_64 "${linuxdeploy_bin}" \
   --appdir "${stage_dir}" \
   --desktop-file "${stage_dir}/usr/share/applications/wsfs-gui.desktop" \
