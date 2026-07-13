@@ -107,6 +107,8 @@ jobs:
         shell: bash
         env:
           LINUXDEPLOY: ${{ runner.temp }}/linuxdeploy/linuxdeploy
+          # The ubuntu:20.04 container runs as root; explicitly allow xmake in this ephemeral build environment.
+          XMAKE_ROOT: y
         run: bash release/linux/build-appimage.sh "${{ needs.resolve.outputs.version }}" "${{ needs.resolve.outputs.core_tag }}"
       - uses: actions/upload-artifact@v4
         with:

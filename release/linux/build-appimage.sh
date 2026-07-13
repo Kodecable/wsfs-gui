@@ -36,8 +36,8 @@ curl --fail --location --retry 3 \
   "https://github.com/Kodecable/wsfs-core/releases/download/${core_tag}/wsfs-linux-amd64"
 install -Dm755 "${core_dir}/wsfs-linux-amd64" "${stage_dir}/usr/bin/wsfs"
 
-# qtkeychain 通过 QLibrary("secret-1") 延迟加载 libsecret，因此常规 ELF 依赖扫描看不到它。
-# 显式传入 linuxdeploy，确保 AppImage 在未安装 libsecret 的宿主上仍能加载客户端库。
+# qtkeychain loads libsecret lazily through QLibrary("secret-1"), so a regular ELF dependency scan cannot see it.
+# Pass it explicitly to linuxdeploy so the AppImage can load the client library on hosts without libsecret installed.
 libsecret_path="$(ldconfig -p | awk '/libsecret-1\\.so\\.0/{print $NF; exit}')"
 [[ -n "${libsecret_path}" ]] || { echo "libsecret-1.so.0 was not found" >&2; exit 1; }
 
