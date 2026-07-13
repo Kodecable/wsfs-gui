@@ -79,6 +79,7 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl file git libsecret-1-dev patchelf python3 python3-pip
           pip3 install 'aqtinstall==3.1.18'
           aqt install-qt linux desktop "${QT_VERSION}" gcc_64 --outputdir "$RUNNER_TEMP/Qt"
+          test -x "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin/qmake"
           echo "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin" >> "$GITHUB_PATH"
       - uses: xmake-io/github-action-setup-xmake@v1
       - name: Fetch linuxdeploy and Qt plugin
@@ -121,7 +122,12 @@ jobs:
         run: |
           python -m pip install 'aqtinstall==3.1.18'
           aqt install-qt windows desktop "$env:QT_VERSION" win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
+          if ($LASTEXITCODE -ne 0) { throw "Installing Qt failed" }
+          if ($null -eq (Get-ChildItem -Path "$env:RUNNER_TEMP/Qt" -Filter "windeployqt.exe" -Recurse -File | Select-Object -First 1)) {
+            throw "Qt installation completed without windeployqt.exe"
+          }
           aqt install-tool windows desktop tools_ifw --outputdir "$env:RUNNER_TEMP/QtTools"
+          if ($LASTEXITCODE -ne 0) { throw "Installing Qt Installer Framework failed" }
       - uses: xmake-io/github-action-setup-xmake@v1
       - name: Build Qt Installer Framework package
         shell: pwsh
