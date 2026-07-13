@@ -66,6 +66,9 @@ jobs:
     needs: resolve
     runs-on: ubuntu-24.04
     container: ubuntu:20.04
+    env:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
     steps:
       - name: Check out source and install build tools
         shell: bash

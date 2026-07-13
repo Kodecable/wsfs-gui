@@ -29,13 +29,15 @@ target("qtkeychain")
 
             local output_dir = "3rdparty/qtkeychain/generated"
             local output_prefix = path.join(output_dir, "kwallet_interface")
-            local xml_file = "3rdparty/qtkeychain/qtkeychain/org.kde.KWallet.xml"
+            local xml_file = path.absolute("3rdparty/qtkeychain/qtkeychain/org.kde.KWallet.xml")
             local header_file = output_prefix .. ".h"
             local source_file = output_prefix .. ".cpp"
+            local source_data = os.isfile(source_file) and io.readfile(source_file) or ""
 
             if not os.isfile(header_file) or not os.isfile(source_file) or
                os.mtime(xml_file) > os.mtime(header_file) or
-               os.mtime(xml_file) > os.mtime(source_file) then
+               os.mtime(xml_file) > os.mtime(source_file) or
+               not source_data:find('#include "kwallet_interface.h"', 1, true) then
                 local qt = assert(target:data("qt"), "Qt SDK not found!")
                 local search_dirs = {}
                 if qt.bindir_host then table.insert(search_dirs, qt.bindir_host) end
@@ -46,7 +48,7 @@ target("qtkeychain")
                 assert(qdbusxml2cpp,
                     "qdbusxml2cpp was not found in the configured Qt SDK")
                 os.mkdir(output_dir)
-                os.vrunv(qdbusxml2cpp, {"-p", output_prefix, "-c", "KWalletInterface", xml_file})
+                os.vrunv(qdbusxml2cpp, {"-p", "kwallet_interface", "-c", "KWalletInterface", xml_file}, {curdir = output_dir})
             end
         end)
 
