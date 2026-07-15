@@ -33,7 +33,6 @@ jobs:
       version: ${{ steps.values.outputs.version }}
       core_tag: ${{ steps.values.outputs.core_tag }}
       release_tag: ${{ steps.values.outputs.release_tag }}
-      qt_version: ${{ steps.values.outputs.qt_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,70 +59,35 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "core_tag=${core_tag}" >> "$GITHUB_OUTPUT"
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
-          echo "qt_version=${QT_VERSION}" >> "$GITHUB_OUTPUT"
 
   linux-appimage:
     needs: resolve
     runs-on: ubuntu-24.04
-    container: ubuntu:20.04
-    env:
-      LANG: C.UTF-8
-      LC_ALL: C.UTF-8
     steps:
-      - name: Check out source and install build tools
-        shell: bash
-        env:
-          QT_VERSION: ${{ needs.resolve.outputs.qt_version }}
-          SOURCE_REF: ${{ needs.resolve.outputs.ref }}
-        run: |
-          set -euo pipefail
-          apt-get update
-          # Runtime libraries required by Qt's XCB and Wayland platform plugins.
-          DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            ca-certificates curl file git imagemagick patchelf python3 python3-pip \
-            libdbus-1-3 libegl1 libfontconfig1 libfreetype6 libgl1 libglx0 libopengl0 \
-            libice6 libsecret-1-dev libsm6 libx11-6 libx11-xcb1 libxext6 libxrender1 \
-            libwayland-client0 libwayland-cursor0 libwayland-egl1 libwayland-server0 \
-            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
-            libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 libxcb-sync1 \
-            libxcb-util1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1 \
-            libxkbcommon0 libxkbcommon-x11-0
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git init "$GITHUB_WORKSPACE"
-          git -C "$GITHUB_WORKSPACE" remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
-          git -C "$GITHUB_WORKSPACE" fetch --depth=1 origin "$SOURCE_REF"
-          git -C "$GITHUB_WORKSPACE" checkout --detach FETCH_HEAD
-          git -C "$GITHUB_WORKSPACE" submodule update --init --recursive
-          pip3 install 'aqtinstall==3.1.18'
-          aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 --outputdir "$RUNNER_TEMP/Qt"
-          test -x "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin/qmake"
-          qt_root="$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64"
-          platform_plugin_dir="$qt_root/plugins/platforms"
-          export LD_LIBRARY_PATH="$qt_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-          for plugin in libqxcb.so libqwayland-egl.so libqwayland-generic.so; do
-            plugin_path="$platform_plugin_dir/$plugin"
-            test -f "$plugin_path" || { echo "Required Qt platform plugin is missing: $plugin_path" >&2; exit 1; }
-            missing="$(ldd "$plugin_path" | awk '$2 == "=>" && $3 == "not" && $4 == "found" { print $1 }')"
-            test -z "$missing" || { echo "Unresolved dependencies in $plugin: $missing" >&2; exit 1; }
-          done
-          echo "$RUNNER_TEMP/Qt/${QT_VERSION}/gcc_64/bin" >> "$GITHUB_PATH"
-      - uses: xmake-io/github-action-setup-xmake@v1
-      - name: Fetch linuxdeploy and Qt plugin
-        shell: bash
-        run: |
-          mkdir -p "$RUNNER_TEMP/linuxdeploy"
-          curl -L --fail -o "$RUNNER_TEMP/linuxdeploy/linuxdeploy.AppImage" https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/linuxdeploy-x86_64.AppImage
-          curl -L --fail -o "$RUNNER_TEMP/linuxdeploy/linuxdeploy-plugin-qt.AppImage" https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/1-alpha-20250213-1/linuxdeploy-plugin-qt-x86_64.AppImage
-          chmod +x "$RUNNER_TEMP/linuxdeploy"/*.AppImage
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          submodules: recursive
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the Arch packaging image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: release/linux/Containerfile
+          tags: wsfs-gui-appimage-builder:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Build AppImage
         shell: bash
-        env:
-          # Run AppImages by extracting them instead of requiring FUSE in the container.
-          APPIMAGE_EXTRACT_AND_RUN: '1'
-          LINUXDEPLOY: ${{ runner.temp }}/linuxdeploy/linuxdeploy.AppImage
-          # The ubuntu:20.04 container runs as root; explicitly allow xmake in this ephemeral build environment.
-          XMAKE_ROOT: y
-        run: bash release/linux/build-appimage.sh "${{ needs.resolve.outputs.version }}" "${{ needs.resolve.outputs.core_tag }}"
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp/wsfs-gui-home \
+            --volume "$GITHUB_WORKSPACE:/workspace" \
+            --workdir /workspace \
+            wsfs-gui-appimage-builder:ci \
+            bash release/linux/build-appimage.sh "${{ needs.resolve.outputs.version }}" "${{ needs.resolve.outputs.core_tag }}"
       - uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
@@ -137,22 +101,16 @@ jobs:
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           submodules: recursive
-      - name: Install Qt and Qt Installer Framework
+      - name: Install Craft and the KDE Breeze runtime
         shell: pwsh
-        env:
-          QT_VERSION: ${{ needs.resolve.outputs.qt_version }}
+        run: |
+          $craftRoot = Join-Path $env:RUNNER_TEMP "CraftRoot"
+          release/windows/install-craft-runtime.ps1 -CraftRoot $craftRoot
+          Add-Content -Path $env:GITHUB_ENV -Value "WSFS_GUI_CRAFT_ROOT=$craftRoot"
+      - name: Install Qt Installer Framework
+        shell: pwsh
         run: |
           python -m pip install 'aqtinstall==3.1.18'
-          aqt install-qt windows desktop "$env:QT_VERSION" win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
-          if ($LASTEXITCODE -ne 0) { throw "Installing Qt failed" }
-          if ($null -eq (Get-ChildItem -Path "$env:RUNNER_TEMP/Qt" -Filter "windeployqt.exe" -Recurse -File | Select-Object -First 1)) {
-            throw "Qt installation completed without windeployqt.exe"
-          }
-          $qmake = Get-ChildItem -Path "$env:RUNNER_TEMP/Qt" -Filter "qmake.exe" -Recurse -File | Select-Object -First 1
-          if ($null -eq $qmake) { throw "Qt installation completed without qmake.exe" }
-          $qtSdkDir = $qmake.Directory.Parent.FullName
-          Add-Content -Path $env:GITHUB_PATH -Value $qmake.Directory.FullName
-          Add-Content -Path $env:GITHUB_ENV -Value "QTDIR=$qtSdkDir"
           aqt install-tool windows desktop tools_ifw --outputdir "$env:RUNNER_TEMP/QtTools"
           if ($LASTEXITCODE -ne 0) { throw "Installing Qt Installer Framework failed" }
       - uses: xmake-io/github-action-setup-xmake@v1
@@ -162,7 +120,7 @@ jobs:
           release/windows/build-installer.ps1 `
             -GuiVersion "${{ needs.resolve.outputs.version }}" `
             -CoreTag "${{ needs.resolve.outputs.core_tag }}" `
-            -QtRoot "$env:RUNNER_TEMP/Qt" `
+            -CraftRoot "$env:WSFS_GUI_CRAFT_ROOT" `
             -IfwRoot "$env:RUNNER_TEMP/QtTools"
       - uses: actions/upload-artifact@v4
         with:

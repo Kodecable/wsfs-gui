@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)] [string]$GuiVersion,
     [Parameter(Mandatory = $true)] [string]$CoreTag,
-    [Parameter(Mandatory = $true)] [string]$QtRoot,
+    [Parameter(Mandatory = $true)] [string]$CraftRoot,
     [Parameter(Mandatory = $true)] [string]$IfwRoot
 )
 
@@ -15,8 +15,8 @@ function Find-Tool([string]$Root, [string]$Name) {
     return $tool.FullName
 }
 
-$windeployqt = Find-Tool $QtRoot "windeployqt.exe"
-$qmake = Find-Tool $QtRoot "qmake.exe"
+$windeployqt = Find-Tool $CraftRoot "windeployqt.exe"
+$qmake = Find-Tool $CraftRoot "qmake.exe"
 $binarycreator = Find-Tool $IfwRoot "binarycreator.exe"
 $qtSdkDir = $qmake.Directory.Parent.FullName
 $env:QTDIR = $qtSdkDir
@@ -35,6 +35,33 @@ Copy-Item $guiBinary.FullName (Join-Path $stageDir "wsfs-gui.exe")
 
 & $windeployqt --release --qmldir (Join-Path $rootDir "src") --dir $stageDir (Join-Path $stageDir "wsfs-gui.exe")
 if ($LASTEXITCODE -ne 0) { throw "windeployqt failed" }
+
+function Copy-BreezeRuntime([string]$Root, [string]$Destination) {
+    $desktopModule = Get-ChildItem -Path $Root -Filter "qmldir" -Recurse -File |
+        Where-Object { $_.FullName -match '[\\/]org[\\/]kde[\\/]desktop[\\/]qmldir$' } |
+        Select-Object -First 1
+    if ($null -eq $desktopModule) { throw "Craft did not install the org.kde.desktop QML module" }
+
+    $orgDirectory = $desktopModule.Directory.Parent.Parent
+    $qmlDestination = Join-Path $Destination "qml"
+    New-Item -ItemType Directory -Force $qmlDestination | Out-Null
+    Copy-Item -Recurse -Force $orgDirectory.FullName $qmlDestination
+
+    $breezePlugin = Get-ChildItem -Path $Root -Filter "breeze6.dll" -Recurse -File | Select-Object -First 1
+    if ($null -eq $breezePlugin) { throw "Craft did not install the Breeze Qt style plugin" }
+    $stylesDirectory = Join-Path $Destination "styles"
+    New-Item -ItemType Directory -Force $stylesDirectory | Out-Null
+    Copy-Item -Force $breezePlugin.FullName (Join-Path $stylesDirectory "breeze6.dll")
+
+    $craftBin = Join-Path $Root "bin"
+    if (-not (Test-Path $craftBin)) { throw "Craft binary directory was not found: $craftBin" }
+    # Craft owns this Qt/KF runtime prefix. Copying its DLL set keeps the QML modules and Breeze plugin ABI-matched.
+    Get-ChildItem -Path $craftBin -Filter "*.dll" -File | ForEach-Object {
+        Copy-Item -Force $_.FullName (Join-Path $Destination $_.Name)
+    }
+}
+
+Copy-BreezeRuntime $CraftRoot $stageDir
 
 $coreDir = Join-Path $env:RUNNER_TEMP "wsfs-core-$CoreTag"
 if (Test-Path $coreDir) { Remove-Item -Recurse -Force $coreDir }

@@ -1,0 +1,20 @@
+FROM archlinux:base-devel
+
+ARG QUICK_SHARUN_URL=https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/2f0fc36efc2d31d86abb3039edc11c902ca3c774/useful-tools/quick-sharun.sh
+ARG DEBLOATED_PACKAGES_URL=https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/2f0fc36efc2d31d86abb3039edc11c902ca3c774/useful-tools/get-debloated-pkgs.sh
+
+COPY release/linux/packages.txt /tmp/wsfs-gui-packages.txt
+
+RUN printf '%s\n' \
+        'CacheDir = /var/cache/pacman/pkg' \
+        'CacheDir = /host-pacman-cache' \
+        >> /etc/pacman.conf \
+    && pacman -Syyu --noconfirm \
+    && xargs --no-run-if-empty pacman -S --noconfirm --needed < /tmp/wsfs-gui-packages.txt \
+    && curl --fail --location --retry 3 --output /usr/local/bin/quick-sharun "${QUICK_SHARUN_URL}" \
+    && curl --fail --location --retry 3 --output /usr/local/bin/get-debloated-pkgs "${DEBLOATED_PACKAGES_URL}" \
+    && chmod 0755 /usr/local/bin/quick-sharun /usr/local/bin/get-debloated-pkgs \
+    && get-debloated-pkgs --add-common --prefer-nano \
+    && rm -f /tmp/wsfs-gui-packages.txt
+
+WORKDIR /workspace

@@ -16,6 +16,10 @@ build/
 *.ilk
 *.exp
 
+# Release packaging artifacts
+dist/
+_test-app/
+
 # Qt generated files
 moc_*.cpp
 qrc_*.cpp
