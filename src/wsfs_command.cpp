@@ -43,6 +43,7 @@ QStringList buildWsfsMountArgs(const Profile &profile)
         args << "--cert-hash" << profile.certHash;
 
 #if defined(Q_OS_LINUX)
+    args << "--json-log";
     if (!profile.flockMode.isEmpty())
         args << "--flock" << profile.flockMode;
 #endif

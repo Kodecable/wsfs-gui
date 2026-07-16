@@ -2,6 +2,7 @@
 
 #include "profile.hpp"
 
+#include <QByteArray>
 #include <QHash>
 #include <QObject>
 #include <QProcess>
@@ -48,6 +49,8 @@ private:
         QString lastError;
         int retryDelaySec = 1;
         qint64 runningSinceMs = 0;
+        qint64 fuseConnectionId = -1;
+        QByteArray standardOutputBuffer;
         bool stopRequested = false;
     };
 
@@ -56,6 +59,8 @@ private:
     void scheduleRetry(const QString &profileId);
     void clearRetry(const QString &profileId);
     void ensureProcess(const QString &profileId, Runtime &runtime);
+    void handleStandardOutput(const QString &profileId, Runtime &runtime);
+    void forceUnmount(const QString &profileId, Runtime &runtime, const Profile &profile);
 
     QHash<QString, Runtime> m_runtime;
     ProfileLookup m_profileLookup;
