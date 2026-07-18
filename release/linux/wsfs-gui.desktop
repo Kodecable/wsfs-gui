@@ -7,3 +7,4 @@ Icon=wsfs-gui
 Categories=Network;Utility;
 Terminal=false
 StartupNotify=true
+StartupWMClass=wsfs-gui

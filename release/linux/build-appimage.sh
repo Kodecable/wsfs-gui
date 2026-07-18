@@ -19,12 +19,13 @@ gui_binary="$(find build -type f -name wsfs-gui -perm -u+x | head -n 1)"
 [[ -n "${gui_binary}" ]] || { echo "wsfs-gui build output was not found" >&2; exit 1; }
 
 output_dir="${root_dir}/dist"
+sharun_output_dir="${output_dir}/output"
 app_dir="${output_dir}/AppDir"
 input_dir="${output_dir}/anylinux-input"
 appimage_name="WSFS-GUI-${version}-AnyLinux-x86_64.AppImage"
-mkdir -p "${output_dir}" "${input_dir}"
+mkdir -p "${output_dir}" "${input_dir}" "${sharun_output_dir}"
 rm -rf "${app_dir}"
-rm -f "${output_dir}/${appimage_name}"
+rm -f "${sharun_output_dir}/${appimage_name}"
 
 core_binary="${input_dir}/wsfs"
 curl --fail --location --retry 3 \
@@ -40,7 +41,7 @@ mapfile -t libproxy_backends < <(find "${libproxy_backend_dir}" -maxdepth 1 -typ
 (( ${#libproxy_backends[@]} > 0 )) || { echo "libproxy backends were not found" >&2; exit 1; }
 
 export APPDIR="${app_dir}"
-export OUTPATH="${output_dir}"
+export OUTPATH="${sharun_output_dir}"
 export MAIN_BIN=wsfs-gui
 export DESKTOP="${root_dir}/release/linux/wsfs-gui.desktop"
 export ICON="${root_dir}/src/assets/app-icon.png"
