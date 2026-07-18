@@ -38,8 +38,11 @@ Window {
         anchors.fill: parent
         spacing: 0
 
-        ToolBar {
+        Rectangle {
+            color: "#dee0e2"
             Layout.fillWidth: true
+            height: 50
+
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: 8
@@ -50,6 +53,12 @@ Window {
                 }
                 Item { Layout.fillWidth: true }
             }
+        }
+
+        Rectangle {
+            color: "#d1d5db"
+            Layout.fillWidth: true
+            height: 2
         }
 
         ColumnLayout {
