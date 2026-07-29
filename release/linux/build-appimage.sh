@@ -54,11 +54,15 @@ export STRACE_BINARY=wsfs-gui
 
 quick-sharun \
   "${gui_binary}" \
-  "${core_binary}" \
   "${libsecret_path}" \
   "${libproxy_backends[@]}" \
   /usr/lib/qt6/qml/org/kde/desktop \
   /usr/lib/qt6/plugins/styles/breeze6.so
+
+# quick-sharun rejects the static Go wsfs binary because it embeds absolute
+# paths from the toolchain. Bundle it after dependency deployment instead of
+# asking quick-sharun to scan it.
+install -Dm755 "${core_binary}" "${app_dir}/shared/bin/wsfs"
 
 cat >> "${app_dir}/.env" <<'EOF'
 QT_QPA_PLATFORMTHEME=xdgdesktopportal
