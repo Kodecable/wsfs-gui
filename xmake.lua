@@ -101,6 +101,9 @@ target("wsfs-gui")
     add_headerfiles("src/*.hpp")
     add_files("src/*.hpp")
     add_files("src/*.cpp")
+    if is_plat("windows") then
+        add_files("src/app.rc")
+    end
 
     set_values("auto_qrc.strip_prefix", "src")
     set_values("auto_qrc.ts_files", "src/i18n/*.ts")
