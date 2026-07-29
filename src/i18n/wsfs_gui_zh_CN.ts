@@ -79,12 +79,12 @@
 <context>
     <name>AppHeader</name>
     <message>
-        <location filename="../AppHeader.qml" line="16"/>
+        <location filename="../ui/controls/AppHeader.qml" line="16"/>
         <source>WSFS Mount Manager</source>
         <translation>WSFS 挂载管理器</translation>
     </message>
     <message>
-        <location filename="../AppHeader.qml" line="21"/>
+        <location filename="../ui/controls/AppHeader.qml" line="21"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
@@ -498,9 +498,24 @@
         <translation>删除此挂载配置？</translation>
     </message>
     <message>
+        <location filename="../main.qml" line="104"/>
+        <source>No</source>
+        <translation>否</translation>
+    </message>
+    <message>
+        <location filename="../main.qml" line="112"/>
+        <source>Yes</source>
+        <translation>是</translation>
+    </message>
+    <message>
         <location filename="../main.qml" line="109"/>
         <source>Error</source>
         <translation>错误</translation>
+    </message>
+    <message>
+        <location filename="../main.qml" line="149"/>
+        <source>OK</source>
+        <translation>确定</translation>
     </message>
 </context>
 </TS>

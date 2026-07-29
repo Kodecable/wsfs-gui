@@ -1,13 +1,15 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ui/controls"
+import "ui/theme/Theme.js" as Theme
 
 ApplicationWindow {
     id: root
     width: 450
     height: 600
     visible: true
-    color: "#f3f4f6"
+    color: Theme.window
     title: qsTr("WSFS Mount Manager")
 
     required property var appModel
@@ -83,38 +85,46 @@ ApplicationWindow {
 
     Component.onCompleted: root.reloadSelected()
 
-    Dialog {
+    AppDialog {
         id: deleteConfirmDialog
-        title: qsTr("Confirm Delete")
-        modal: true
-        standardButtons: Dialog.Yes | Dialog.No
         width: 380
-        contentItem: Label {
-            text: qsTr("Delete this mount profile?")
-            wrapMode: Text.Wrap
-            padding: 12
-        }
-        onAccepted: {
-            if (!root.hasModel || !root.pendingDeleteProfileId.length)
-                return
-            root.appModel.selectedProfileId = root.pendingDeleteProfileId
-            root.appModel.removeSelectedProfile()
-            root.pendingDeleteProfileId = ""
-        }
-        onRejected: root.pendingDeleteProfileId = ""
+        dialogTitle: qsTr("Confirm Delete")
+        messageText: qsTr("Delete this mount profile?")
+
+        buttons: [
+            AppButton {
+                text: qsTr("No")
+                onClicked: {
+                    root.pendingDeleteProfileId = ""
+                    deleteConfirmDialog.close()
+                }
+            },
+            AppButton {
+                text: qsTr("Yes")
+                onClicked: {
+                    if (!root.hasModel || !root.pendingDeleteProfileId.length)
+                        return
+                    root.appModel.selectedProfileId = root.pendingDeleteProfileId
+                    root.appModel.removeSelectedProfile()
+                    root.pendingDeleteProfileId = ""
+                    deleteConfirmDialog.close()
+                }
+            }
+        ]
     }
 
-    Dialog {
+    AppDialog {
         id: errorDialog
-        title: qsTr("Error")
-        modal: true
-        standardButtons: Dialog.Ok
         width: 420
-        contentItem: Label {
-            text: root.errorMessage
-            wrapMode: Text.Wrap
-            padding: 12
-        }
+        dialogTitle: qsTr("Error")
+        messageText: root.errorMessage
+
+        buttons: [
+            AppButton {
+                text: qsTr("OK")
+                onClicked: errorDialog.close()
+            }
+        ]
     }
 
     ProfileConfigWindow {
@@ -152,12 +162,13 @@ ApplicationWindow {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.topMargin: 8
-        spacing: 10
+        anchors.topMargin: 12
+        anchors.leftMargin: 16
+        anchors.rightMargin: 16
+        anchors.bottomMargin: 16
+        spacing: 12
 
         DependencyBanner {
-            Layout.leftMargin: 16
-            Layout.rightMargin: 16
             warningText: root.hasModel ? root.appModel.dependencyWarning : ""
         }
 

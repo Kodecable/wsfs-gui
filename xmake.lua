@@ -104,4 +104,7 @@ target("wsfs-gui")
 
     set_values("auto_qrc.strip_prefix", "src")
     set_values("auto_qrc.ts_files", "src/i18n/*.ts")
-    set_values("auto_qrc.files", "src/*.qml", "src/assets/**")
+    set_values("auto_qrc.files",
+        "src/**.qml",
+        "src/**.js",
+        "src/assets/**")

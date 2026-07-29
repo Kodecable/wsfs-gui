@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ui/controls"
+import "ui/theme/Theme.js" as Theme
 
 Item {
     id: root
@@ -42,16 +44,17 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        anchors.leftMargin: 16
-        anchors.rightMargin: 16
-        radius: 6
-        color: "transparent"
-        border.color: root.selected ? "#d1d5db" : "transparent"
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        radius: Theme.radiusMedium
+        color: root.selected ? Theme.selection : Theme.surface
+        border.width: 1
+        border.color: root.selected ? Theme.borderStrong : Theme.border
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 8
-            spacing: 6
+            anchors.margins: 10
+            spacing: 8
 
             ColumnLayout {
                 Layout.fillWidth: true
@@ -61,25 +64,23 @@ Item {
                     Layout.fillWidth: true
                     text: root.profileData.name || qsTr("(Unnamed)")
                     font.bold: true
+                    color: Theme.text
                     elide: Text.ElideRight
                 }
                 Label {
                     Layout.fillWidth: true
                     text: qsTr("State: %1").arg(root.stateTextWithPid(root.profileData.state || "Stopped", root.profileData.pid, root.profileData.lastError))
-                    color: "#374151"
+                    color: Theme.textMuted
                     elide: Text.ElideRight
                 }
             }
 
-            Button {
+            AppButton {
                 text: root.profileData.enabled ? qsTr("Stop") : qsTr("Start")
                 icon.source: root.profileData.enabled
                             ? "qrc:/assets/icons/stop.svg"
                             : "qrc:/assets/icons/start.svg"
-                Layout.leftMargin: 16
-                Layout.rightMargin: 16
-                leftPadding: 10
-                rightPadding: 10
+                Layout.leftMargin: 12
                 Layout.preferredWidth: Math.max(72, implicitContentWidth + leftPadding + rightPadding)
                 Layout.maximumWidth: Layout.preferredWidth
                 Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
@@ -102,19 +103,23 @@ Item {
             }
         }
 
-        Menu {
+        AppMenu {
             id: rowMenu
-            MenuItem {
+            y: parent.height - 4
+
+            AppMenuItem {
                 text: qsTr("Config")
                 icon.source: "qrc:/assets/icons/settings.svg"
                 onTriggered: root.configureRequested(root.profileData.id)
             }
-            MenuItem {
+
+            AppMenuItem {
                 text: qsTr("Logs")
                 icon.source: "qrc:/assets/icons/logs.svg"
                 onTriggered: root.logsRequested(root.profileData.id)
             }
-            MenuItem {
+
+            AppMenuItem {
                 text: qsTr("Delete")
                 icon.source: "qrc:/assets/icons/delete.svg"
                 onTriggered: root.deleteRequested(root.profileData.id)

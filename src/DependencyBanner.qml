@@ -1,17 +1,18 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ui/controls"
+import "ui/theme/Theme.js" as Theme
 
-Rectangle {
+AppPanel {
     id: root
 
     property string warningText: ""
 
     visible: root.warningText.length > 0
     Layout.fillWidth: true
-    color: "#fef2f2"
-    radius: 8
-    border.color: "#fecaca"
+    color: Theme.warningSoft
+    border.color: Theme.warning
     implicitHeight: infoCol.implicitHeight + 16
 
     ColumnLayout {
@@ -22,11 +23,13 @@ Rectangle {
 
         Label {
             text: qsTr("Dependency Warning")
-            color: "#991b1b"
+            color: Theme.warning
+            font.bold: true
         }
         Label {
             text: root.warningText
-            color: "#7f1d1d"
+            color: Theme.text
+            wrapMode: Text.Wrap
         }
     }
 }

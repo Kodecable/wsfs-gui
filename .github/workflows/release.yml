@@ -101,12 +101,13 @@ jobs:
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           submodules: recursive
-      - name: Install Craft and the KDE Breeze runtime
+      - name: Install Qt SDK
         shell: pwsh
         run: |
-          $craftRoot = Join-Path $env:RUNNER_TEMP "CraftRoot"
-          release/windows/install-craft-runtime.ps1 -CraftRoot $craftRoot
-          Add-Content -Path $env:GITHUB_ENV -Value "WSFS_GUI_CRAFT_ROOT=$craftRoot"
+          python -m pip install 'aqtinstall==3.3.0'
+          aqt install-qt windows desktop 6.11.1 win64_msvc2022_64 --modules qtsvg --outputdir "$env:RUNNER_TEMP/Qt"
+          if ($LASTEXITCODE -ne 0) { throw "Installing Qt SDK failed" }
+          Add-Content -Path $env:GITHUB_ENV -Value "WSFS_GUI_QT_ROOT=$env:RUNNER_TEMP/Qt"
       - name: Install Inno Setup
         shell: pwsh
         run: |
@@ -124,7 +125,7 @@ jobs:
           release/windows/build-installer.ps1 `
             -GuiVersion "${{ needs.resolve.outputs.version }}" `
             -CoreTag "${{ needs.resolve.outputs.core_tag }}" `
-            -CraftRoot "$env:WSFS_GUI_CRAFT_ROOT"
+            -QtRoot "$env:WSFS_GUI_QT_ROOT"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer

@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ui/controls"
+import "ui/theme/Theme.js" as Theme
 
-Rectangle {
+Item {
     id: root
     property bool hasModel: false
     property var profiles: []
@@ -18,54 +20,46 @@ Rectangle {
 
     Layout.fillWidth: true
     Layout.fillHeight: true
-    color: "#f4f5f7"
-
     ColumnLayout {
         anchors.fill: parent
-        spacing: 8
+        spacing: Theme.panelGap
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.leftMargin: 16
-            Layout.rightMargin: 16
 
-            Label { text: qsTr("Mount List") }
+            Label {
+                text: qsTr("Mount List")
+                color: Theme.text
+                font.pixelSize: 18
+                font.bold: false
+            }
             Item { Layout.fillWidth: true }
-            Button {
+            AppButton {
                 text: qsTr("New")
                 icon.source: "qrc:/assets/icons/add.svg"
                 onClicked: root.createRequested()
             }
-            Button {
+            AppButton {
                 text: qsTr("Stop All")
                 icon.source: "qrc:/assets/icons/stop-circle.svg"
                 enabled: root.hasModel
                 onClicked: root.stopAllRequested()
             }
         }
-        
-        Rectangle {
+
+        AppPanel {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#FFFFFF"
 
-            Rectangle {
-                id: borderRectangle
-                color: "#d1d5db"
-                height: 1.6
+            ScrollView {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-            }
-
-            ScrollView {
-                anchors.top: borderRectangle.top
-                anchors.left: parent.left
-                anchors.right: parent.right
                 anchors.bottom: parent.bottom
+                anchors.margins: 8
                 clip: true
 
-                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                ScrollBar.vertical: AppScrollBar {}
 
                 ListView {
                     id: profileList

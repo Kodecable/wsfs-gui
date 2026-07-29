@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ui/controls"
+import "ui/theme/Theme.js" as Theme
 
 Item {
     id: root
@@ -164,8 +166,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: nameField
                 Layout.fillWidth: true
             }
@@ -174,7 +177,7 @@ Item {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 height: 1
-                color: "#d1d5db"
+                color: Theme.border
             }
 
             Label {
@@ -182,8 +185,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: mountPointField
                 Layout.fillWidth: true
                 onEditingFinished: {
@@ -197,8 +201,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            ComboBox {
+            AppComboBox {
                 id: logLevelField
                 model: [
                     { text: "trace", value: "trace" },
@@ -220,8 +225,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: structTimeoutField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Empty = default")
@@ -232,8 +238,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            CheckBox {
+            AppCheckBox {
                 id: appendWsfsQuery
                 checked: true
                 Layout.fillWidth: true
@@ -243,7 +250,7 @@ Item {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 height: 1
-                color: "#d1d5db"
+                color: Theme.border
             }
 
             Label {
@@ -251,8 +258,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            ComboBox {
+            AppComboBox {
                 id: schemeField
                 model: ["wsfs", "wsfss"]
                 currentIndex: 0
@@ -264,8 +272,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: hostField
                 text: "localhost"
                 Layout.fillWidth: true
@@ -276,13 +285,13 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            SpinBox {
+            AppSpinBox {
                 id: portField
                 from: 1
                 to: 65535
                 value: 20001
-                editable: true
                 Layout.fillWidth: true
             }
 
@@ -291,8 +300,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: pathField
                 text: "/"
                 Layout.fillWidth: true
@@ -304,8 +314,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: pingIntervalField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Empty = default")
@@ -316,8 +327,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: certHashField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Empty = none")
@@ -328,8 +340,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: usernameField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Empty = anonymous")
@@ -340,8 +353,9 @@ Item {
                 horizontalAlignment: Text.AlignRight
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: passwordField
                 echoMode: TextInput.Password
                 Layout.fillWidth: true
@@ -352,7 +366,7 @@ Item {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 height: 1
-                color: "#d1d5db"
+                color: Theme.border
                 visible: root.isUnix || root.isWindows
             }
 
@@ -362,8 +376,9 @@ Item {
                 visible: root.isLinux
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            CheckBox {
+            AppCheckBox {
                 id: directMountBox
                 visible: root.isLinux
                 Layout.fillWidth: true
@@ -375,8 +390,9 @@ Item {
                 visible: root.isUnix
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: uidField
                 visible: root.isUnix
                 Layout.fillWidth: true
@@ -389,8 +405,9 @@ Item {
                 visible: root.isUnix
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: gidField
                 visible: root.isUnix
                 Layout.fillWidth: true
@@ -403,8 +420,9 @@ Item {
                 visible: root.isUnix
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: otherUidField
                 visible: root.isUnix
                 Layout.fillWidth: true
@@ -417,8 +435,9 @@ Item {
                 visible: root.isUnix
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            TextField {
+            AppTextField {
                 id: otherGidField
                 visible: root.isUnix
                 Layout.fillWidth: true
@@ -431,8 +450,9 @@ Item {
                 visible: root.isLinux
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.text
             }
-            ComboBox {
+            AppComboBox {
                 id: flockModeField
                 visible: root.isLinux
                 model: [
@@ -451,7 +471,7 @@ Item {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 height: 1
-                color: "#d1d5db"
+                color: Theme.border
                 visible: root.isWindows
             }
 
@@ -461,8 +481,9 @@ Item {
                 visible: root.isWindows
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.textMuted
             }
-            TextField {
+            AppTextField {
                 id: volumeLabelField
                 visible: root.isWindows
                 Layout.fillWidth: true
@@ -475,8 +496,9 @@ Item {
                 visible: root.isWindows
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: Theme.textMuted
             }
-            CheckBox {
+            AppCheckBox {
                 id: masqueradeAsNtfsBox
                 visible: root.isWindows
                 Layout.fillWidth: true

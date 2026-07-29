@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ui/controls"
+import "ui/theme/Theme.js" as Theme
 
 Window {
     id: root
@@ -11,7 +13,7 @@ Window {
     height: 540
     visible: false
     modality: Qt.ApplicationModal
-    color: "#f3f4f6"
+    color: Theme.window
 
     property bool hasModel: false
     property var appModel: null
@@ -38,66 +40,66 @@ Window {
         anchors.fill: parent
         spacing: 0
 
-        Rectangle {
-            color: "#dee0e2"
+        AppSectionHeader {
             Layout.fillWidth: true
-            height: 50
+            title: root.profileId.length > 0
+                   ? qsTr("Logs - %1").arg(root.profileName)
+                   : qsTr("Logs")
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 8
-
-                Label {
-                    text: root.profileId.length > 0
-                          ? qsTr("Logs - %1").arg(root.profileName)
-                          : qsTr("Logs")
-                }
-                Item { Layout.fillWidth: true }
-                Switch {
-                    text: qsTr("Auto Follow")
-                    checked: root.autoFollow
-                    onToggled: {
-                        root.autoFollow = checked
-                        if (checked)
-                            root.scrollToBottom()
-                    }
+            AppSwitch {
+                text: qsTr("Auto Follow")
+                checked: root.autoFollow
+                onToggled: {
+                    root.autoFollow = checked
+                    if (checked)
+                        root.scrollToBottom()
                 }
             }
         }
 
         Rectangle {
-            color: "#d1d5db"
+            color: Theme.border
             Layout.fillWidth: true
-            height: 2
+            height: 1
         }
 
-        ScrollView {
-            id: logScroll
+        AppPanel {
+            id: outerPanel
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.margins: 16
 
-            TextArea {
-                id: logMirror
-                property string _logTick: root.hasModel && root.appModel ? root.appModel.logs : ""
-                font.family: "monospace"
-                width: logScroll.availableWidth
-                padding: 10
-                text: {
-                    const trigger = _logTick
-                    return root.profileId.length > 0
-                        ? (root.hasModel && root.appModel ? root.appModel.logsForProfile(root.profileId) : "")
-                        : trigger
-                }
-                onTextChanged: {
-                    if (root.autoFollow)
-                        root.scrollToBottom()
-                }
-                readOnly: true
-                wrapMode: Text.WrapAnywhere
-                background: Rectangle {
-                    color: "white"
-                    radius: 0
-                    border.color: "#d1d5db"
+            ScrollView {
+                id: logScroll
+                anchors.fill: parent
+                anchors.margins: 8
+                ScrollBar.vertical: AppScrollBar {}
+
+                TextArea {
+                    id: logMirror
+                    property string _logTick: root.hasModel && root.appModel ? root.appModel.logs : ""
+                    font.family: "monospace"
+                    color: Theme.text
+                    width: Math.max(0, logScroll.width - 16)
+                    padding: 14
+                    text: {
+                        const trigger = _logTick
+                        return root.profileId.length > 0
+                            ? (root.hasModel && root.appModel ? root.appModel.logsForProfile(root.profileId) : "")
+                            : trigger
+                    }
+                    onTextChanged: {
+                        if (root.autoFollow)
+                            root.scrollToBottom()
+                    }
+                    readOnly: true
+                    wrapMode: Text.WrapAnywhere
+                    background: Rectangle {
+                        color: Theme.surface
+                        radius: Theme.radiusMedium
+                        border.width: 1
+                        border.color: Theme.border
+                    }
                 }
             }
         }

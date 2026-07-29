@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import "ui/controls"
+import "ui/theme/Theme.js" as Theme
 
 Window {
     id: root
@@ -10,7 +12,7 @@ Window {
     height: 600
     visible: false
     modality: Qt.ApplicationModal
-    color: "#f3f4f6"
+    color: Theme.window
 
     property var profile: ({})
     property bool allowClose: false
@@ -74,124 +76,98 @@ Window {
         }
     }
 
-    Dialog {
+    AppDialog {
         id: restartDialog
-        parent: root.contentItem
-        title: qsTr("Configuration Saved")
-        modal: true
-        standardButtons: Dialog.Yes | Dialog.No
-        width: 300
-        height: 160
+        width: 320
+        dialogTitle: qsTr("Configuration Saved")
+        messageText: qsTr("Restart current mount now to apply new settings?")
 
-        padding: 0 // this value will causing ugly duplicate padding between the header and content.
-                   // not sure who design this, anyway, fuck you.
-
-        contentItem: Label {
-            text: qsTr("Restart current mount now to apply new settings?")
-            wrapMode: Text.Wrap
-            padding: 16
-        }
-        onAccepted: root.restartRequested()
-    }
-
-    Dialog {
-        id: unsavedChangesDialog
-        title: qsTr("Unsaved Changes")
-        modal: true
-        width: 300
-        height: 160
-        margins: 0
-        
-        padding: 0 // this value will causing ugly duplicate padding between the header and content.
-                   // not sure who design this, anyway, fuck you.
-
-        contentItem: Item {
-            ColumnLayout {
-                id: contentColumn
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 16
-
-                Label {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    text: qsTr("You have unsaved changes.")
-                    wrapMode: Text.Wrap
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Item { Layout.fillWidth: true }
-                    Button {
-                        text: qsTr("Save")
-                        enabled: form.hasChanges() && form.isComplete() && !root.saveInProgress
-                        onClicked: {
-                            root.closeAfterSave = true
-                            const ok = root.saveCurrent()
-                            if (ok)
-                                unsavedChangesDialog.close()
-                            else
-                                root.closeAfterSave = false
-                        }
-                    }
-                    Button {
-                        text: qsTr("Don't Save")
-                        onClicked: {
-                            unsavedChangesDialog.close()
-                            root.closeWindow(true)
-                        }
-                    }
-                    Button {
-                        text: qsTr("Cancel")
-                        onClicked: unsavedChangesDialog.close()
-                    }
+        buttons: [
+            AppButton {
+                text: qsTr("No")
+                onClicked: restartDialog.close()
+            },
+            AppButton {
+                text: qsTr("Yes")
+                onClicked: {
+                    restartDialog.close()
+                    root.restartRequested()
                 }
             }
-        }
+        ]
+    }
+
+    AppDialog {
+        id: unsavedChangesDialog
+        width: 340
+        dialogTitle: qsTr("Unsaved Changes")
+        messageText: qsTr("You have unsaved changes.")
+        bodySpacing: 16
+
+        buttons: [
+            AppButton {
+                text: qsTr("Save")
+                enabled: form.hasChanges() && form.isComplete() && !root.saveInProgress
+                onClicked: {
+                    root.closeAfterSave = true
+                    const ok = root.saveCurrent()
+                    if (ok)
+                        unsavedChangesDialog.close()
+                    else
+                        root.closeAfterSave = false
+                }
+            },
+            AppButton {
+                text: qsTr("Don't Save")
+                onClicked: {
+                    unsavedChangesDialog.close()
+                    root.closeWindow(true)
+                }
+            },
+            AppButton {
+                text: qsTr("Cancel")
+                onClicked: unsavedChangesDialog.close()
+            }
+        ]
     }
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        Rectangle {
-            color: "#dee0e2"
+        AppSectionHeader {
             Layout.fillWidth: true
-            height: 50
+            title: qsTr("Mount Configuration")
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 8
-
-                Label {
-                    text: qsTr("Mount Configuration")
-                    Layout.alignment: Qt.AlignVCenter
-                }
-                Item { Layout.fillWidth: true }
-                Button {
-                    text: qsTr("Save")
-                    icon.source: "qrc:/assets/icons/save.svg"
-                    flat: true
-                    enabled: form.hasChanges() && form.isComplete() && !root.saveInProgress
-                    onClicked: root.saveCurrent()
-                }
+            AppButton {
+                text: qsTr("Save")
+                icon.source: "qrc:/assets/icons/save.svg"
+                enabled: form.hasChanges() && form.isComplete() && !root.saveInProgress
+                onClicked: root.saveCurrent()
             }
         }
 
         Rectangle {
-            color: "#d1d5db"
+            color: Theme.border
             Layout.fillWidth: true
-            height: 2
+            height: 1
         }
 
-        ScrollView {
-            id: formScroll
+        AppPanel {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.margins: 16
 
-            ProfileForm {
-                id: form
-                width: Math.max(implicitWidth, formScroll.availableWidth)
+            ScrollView {
+                id: formScroll
+                anchors.fill: parent
+                anchors.margins: 8
+                ScrollBar.vertical: AppScrollBar {}
+
+                ProfileForm {
+                    id: form
+                    width: Math.max(implicitWidth, formScroll.availableWidth)
+                }
             }
         }
     }

@@ -4,7 +4,6 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QResource>
-#include <QStyleFactory>
 #include <QTranslator>
 #include <QIcon>
 
@@ -13,22 +12,11 @@
 int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(application_resources);
+    QQuickStyle::setStyle(QStringLiteral("Basic"));
 
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
     app.setWindowIcon(QIcon(QStringLiteral(":/assets/app-icon.png")));
-
-#ifdef Q_OS_WIN
-    // Windows packages ship the KDE desktop style and must not fall back to Qt Quick Controls Basic.
-    QStyle *breezeStyle = QStyleFactory::create(QStringLiteral("Breeze"));
-    if (breezeStyle == nullptr) {
-        qCritical() << "The bundled Breeze Qt style plugin could not be loaded";
-        return -1;
-    }
-    QApplication::setStyle(breezeStyle);
-    QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
-    QQuickStyle::setFallbackStyle(QStringLiteral("Basic"));
-#endif
 
     QTranslator translator;
     const QLocale locale = QLocale::system();
