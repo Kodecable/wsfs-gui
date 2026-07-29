@@ -1,7 +1,7 @@
 rule("auto_qrc")
     on_config(function (target)
         local autogendir = path.join(target:autogendir(), "rules", "auto_qrc")
-        local qrc_path = path.join(autogendir, "qml.qrc")
+        local qrc_path = path.join(autogendir, "application_resources.qrc")
 
         local qrc_patterns = target:values("auto_qrc.files")
         if not qrc_patterns or #qrc_patterns == 0 then

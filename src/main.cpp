@@ -3,6 +3,7 @@
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QQuickWindow>
+#include <QResource>
 #include <QStyleFactory>
 #include <QTranslator>
 #include <QIcon>
@@ -11,6 +12,8 @@
 
 int main(int argc, char *argv[])
 {
+    Q_INIT_RESOURCE(application_resources);
+
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
     app.setWindowIcon(QIcon(QStringLiteral(":/assets/app-icon.png")));
