@@ -104,7 +104,9 @@ jobs:
       - name: Install Qt SDK
         shell: pwsh
         run: |
-          python -m pip install 'aqtinstall==3.3.0'
+          python -m pip install 'git+https://github.com/miurahr/aqtinstall.git@refs/pull/1000/head'
+          aqt version
+          aqt list-qt windows desktop
           aqt install-qt windows desktop 6.11.1 win64_msvc2022_64 --modules qtsvg --outputdir "$env:RUNNER_TEMP/Qt"
           if ($LASTEXITCODE -ne 0) { throw "Installing Qt SDK failed" }
           Add-Content -Path $env:GITHUB_ENV -Value "WSFS_GUI_QT_ROOT=$env:RUNNER_TEMP/Qt"

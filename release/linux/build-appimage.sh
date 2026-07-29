@@ -69,6 +69,6 @@ EOF
 
 quick-sharun --make-appimage
 
-generated_appimage="$(find "${output_dir}" -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
+generated_appimage="$(find "${sharun_output_dir}" -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
 [[ -n "${generated_appimage}" ]] || { echo "quick-sharun did not generate an AppImage" >&2; exit 1; }
 mv "${generated_appimage}" "${output_dir}/${appimage_name}"
