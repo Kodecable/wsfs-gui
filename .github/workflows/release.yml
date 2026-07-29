@@ -107,21 +107,24 @@ jobs:
           $craftRoot = Join-Path $env:RUNNER_TEMP "CraftRoot"
           release/windows/install-craft-runtime.ps1 -CraftRoot $craftRoot
           Add-Content -Path $env:GITHUB_ENV -Value "WSFS_GUI_CRAFT_ROOT=$craftRoot"
-      - name: Install Qt Installer Framework
+      - name: Install Inno Setup
         shell: pwsh
         run: |
-          python -m pip install 'aqtinstall==3.1.18'
-          aqt install-tool windows desktop tools_ifw --outputdir "$env:RUNNER_TEMP/QtTools"
-          if ($LASTEXITCODE -ne 0) { throw "Installing Qt Installer Framework failed" }
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw "Installing Inno Setup failed" }
+          $innoDir = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6"
+          $iscc = Join-Path $innoDir "ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe was not found under $innoDir" }
+          Add-Content -Path $env:GITHUB_PATH -Value $innoDir
+          (Get-Item $iscc).VersionInfo.ProductVersion
       - uses: xmake-io/github-action-setup-xmake@v1
-      - name: Build Qt Installer Framework package
+      - name: Build Windows installer
         shell: pwsh
         run: |
           release/windows/build-installer.ps1 `
             -GuiVersion "${{ needs.resolve.outputs.version }}" `
             -CoreTag "${{ needs.resolve.outputs.core_tag }}" `
-            -CraftRoot "$env:WSFS_GUI_CRAFT_ROOT" `
-            -IfwRoot "$env:RUNNER_TEMP/QtTools"
+            -CraftRoot "$env:WSFS_GUI_CRAFT_ROOT"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer

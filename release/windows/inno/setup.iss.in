@@ -1,0 +1,47 @@
+; This script is rendered by release/windows/build-installer.ps1.
+
+[Setup]
+AppId={{@APP_ID@}
+AppName=WSFS GUI
+AppVersion=@GUI_VERSION@
+AppVerName=WSFS GUI @GUI_VERSION@
+AppPublisher=WSFS GUI Contributors
+DefaultDirName={localappdata}\Programs\WSFS GUI
+DefaultGroupName=WSFS GUI
+DisableProgramGroupPage=yes
+UninstallDisplayIcon={app}\wsfs-gui.exe
+LicenseFile=@LICENSE_FILE@
+OutputDir=@INSTALLER_OUTPUT_DIR@
+OutputBaseFilename=@INSTALLER_OUTPUT_BASE@
+SetupIconFile=@SETUP_ICON_FILE@
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+PrivilegesRequired=lowest
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+ChangesAssociations=no
+CloseApplications=yes
+VersionInfoCompany=WSFS GUI Contributors
+VersionInfoProductName=WSFS GUI Installer
+VersionInfoProductVersion=@GUI_VERSION@
+VersionInfoVersion=@GUI_VERSION@
+VersionInfoDescription=Installer for WSFS GUI
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+
+[Files]
+Source: "@STAGE_DIR@\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{autoprograms}\WSFS GUI"; Filename: "{app}\wsfs-gui.exe"; WorkingDir: "{app}"; Comment: "WSFS GUI"; IconFilename: "{app}\wsfs-gui.exe"
+
+[InstallDelete]
+Type: files; Name: "{app}\WSFS-GUI-MaintenanceTool.exe"
+Type: files; Name: "{app}\maintenancetool.dat"
+Type: files; Name: "{app}\installer.dat"
+Type: files; Name: "{app}\components.xml"
+Type: files; Name: "{app}\network.xml"
+Type: filesandordirs; Name: "{app}\installerResources"
