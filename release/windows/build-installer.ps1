@@ -85,11 +85,17 @@ $windeployqt = Find-Tool $QtRoot "windeployqt.exe"
 $qmake = Find-Tool $QtRoot "qmake.exe"
 $iscc = Find-InnoCompiler
 $qtSdkDir = $qmake.Directory.Parent.FullName
+$qtVersion = (& $qmake -query QT_VERSION).Trim()
+if ([string]::IsNullOrWhiteSpace($qtVersion)) {
+    throw "Unable to query QT_VERSION from $qmake"
+}
 $env:QTDIR = $qtSdkDir
 $env:Path = "$($qmake.Directory.FullName);$env:Path"
 
-xmake f -p windows -a x64 -m release --toolchain=msvc "--qt=$qtSdkDir"
+xmake f -c -p windows -a x64 -m release --toolchain=msvc "--qt=$QtRoot" "--qt_sdkver=$qtVersion"
+if ($LASTEXITCODE -ne 0) { throw "xmake configure failed" }
 xmake build wsfs-gui
+if ($LASTEXITCODE -ne 0) { throw "xmake build failed" }
 
 $guiBinary = Join-Path $rootDir "build/windows/x64/release/wsfs-gui.exe"
 if (-not (Test-Path $guiBinary)) {
