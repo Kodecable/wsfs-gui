@@ -22,10 +22,10 @@ rule("auto_qrc")
             for _, filepath in ipairs(files) do
                 local abs_path = path.absolute(filepath)
                 local projectdir = os.projectdir()
-                local rel = path.relative(filepath, projectdir)
+                local rel = path.relative(filepath, projectdir):gsub("\\", "/")
 
                 if strip_prefix ~= "" then
-                    local prefix = strip_prefix .. "/"
+                    local prefix = strip_prefix:gsub("\\", "/") .. "/"
                     if rel:startswith(prefix) then
                         rel = rel:sub(#prefix + 1)
                     end
