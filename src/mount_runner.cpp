@@ -285,32 +285,32 @@ void MountRunner::handleStandardOutput(const QString &profileId, Runtime &runtim
         const QJsonObject object = document.isObject() ? document.object() : QJsonObject{};
 
         QString message = object.value("message").toString();
-        message = message.isEmpty() ? "<Missing Message>" : message;
+        QString level = object.value("level").toString().toUpper();
 
-        QString level = object.value("level").toString();
-        level = level.isEmpty() ? "<Missing Level>" : level;
-        level = level.toUpper();
-
-        Profile *profile = profileFor(profileId);
-        if (profile && message == QStringLiteral("FUSE connection Id obtained") &&
-            object.value("Mountpoint").toString() == profile->mountPoint)
+        if (level.isEmpty() || message.isEmpty()) { emit logLine(profileId, QStringLiteral("core raw: %1").arg(line)); }
+        else
         {
-            const qint64 connectionId = object.value("id").toVariant().toLongLong();
-            if (connectionId > 0)
+            Profile *profile = profileFor(profileId);
+            if (profile && message == QStringLiteral("FUSE connection Id obtained") &&
+                object.value("Mountpoint").toString() == profile->mountPoint)
             {
-                runtime.fuseConnectionId = connectionId;
-                emit logLine(profileId, QStringLiteral("FUSE connection Id obtained: %1").arg(connectionId));
+                const qint64 connectionId = object.value("Id").toVariant().toLongLong();
+                if (connectionId > 0)
+                {
+                    runtime.fuseConnectionId = connectionId;
+                    emit logLine(profileId, QStringLiteral("FUSE connection Id obtained: %1").arg(connectionId));
+                }
             }
-        }
 
-        QString formatedOutput = QString("%1 %2").arg(level).arg(message);
-        for (const QString &key : object.keys()) {
-            if (key == "level" || key == "message") 
-                continue;
-            formatedOutput.append(QString(" %1=%2").arg(key).arg(object[key].toVariant().toString()));
-        }
+            QString formatedOutput = QString("%1 %2").arg(level).arg(message);
+            for (const QString &key : object.keys())
+            {
+                if (key == "level" || key == "message") continue;
+                formatedOutput.append(QString(" %1=%2").arg(key).arg(object[key].toVariant().toString()));
+            }
 
-        emit logLine(profileId, QStringLiteral("stdout: %1").arg(formatedOutput));
+            emit logLine(profileId, QStringLiteral("core: %1").arg(formatedOutput));
+        }
     }
 }
 
