@@ -11,8 +11,8 @@ class ProfileStore
 public:
     QList<Profile> loadProfiles() const;
     AppSettings loadSettings() const;
-    void saveProfiles(const QList<Profile> &profiles, bool includePasswords = true) const;
-    void saveSettings(const AppSettings &settings) const;
+    bool saveProfiles(const QList<Profile> &profiles, bool includePasswords = true) const;
+    bool saveSettings(const AppSettings &settings) const;
 
 private:
     QString configDir() const;

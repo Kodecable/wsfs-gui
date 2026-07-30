@@ -437,14 +437,14 @@ void AppController::refreshEnvironment()
     emit environmentChanged();
 }
 
-void AppController::saveProfiles() const
+bool AppController::saveProfiles() const
 {
-    m_store.saveProfiles(m_profiles, !m_settings.useSystemCredentialStore);
+    return m_store.saveProfiles(m_profiles, !m_settings.useSystemCredentialStore);
 }
 
-void AppController::saveSettings() const
+bool AppController::saveSettings() const
 {
-    m_store.saveSettings(m_settings);
+    return m_store.saveSettings(m_settings);
 }
 
 QString AppController::resolveWsfsExecutable() const
@@ -477,14 +477,27 @@ void AppController::migratePlainTextToKeychain()
     auto writeNext = std::make_shared<std::function<void(int)>>();
     *writeNext = [this, writeNext](int index) {
         if (index >= m_profiles.size()) {
+            AppSettings nextSettings = m_settings;
+            nextSettings.useSystemCredentialStore = true;
+            if (!m_store.saveSettings(nextSettings)) {
+                setCredentialOperationInProgress(false);
+                emit credentialMigrationFinished(false,
+                                                  tr("Unable to save credential store settings."));
+                return;
+            }
+
+            m_settings = nextSettings;
             for (Profile &profile : m_profiles)
                 profile.password.clear();
-            m_settings.useSystemCredentialStore = true;
-            saveSettings();
-            saveProfiles();
+            const bool profilesSaved = saveProfiles();
             setCredentialOperationInProgress(false);
             emit settingsChanged();
             emit selectedProfileChanged();
+            if (!profilesSaved) {
+                emit credentialMigrationFinished(
+                        false, tr("Unable to remove plaintext credentials from profile storage."));
+                return;
+            }
             emit credentialMigrationFinished(true, QString());
             return;
         }
@@ -517,20 +530,35 @@ void AppController::migrateKeychainToPlainText()
     auto readNext = std::make_shared<std::function<void(int)>>();
     *readNext = [this, migratedProfiles, readNext](int index) {
         if (index >= migratedProfiles->size()) {
-            deleteKeychainPasswords(0, [this, migratedProfiles](bool ok, const QString &error) {
+            if (!m_store.saveProfiles(*migratedProfiles, true)) {
+                setCredentialOperationInProgress(false);
+                emit credentialMigrationFinished(false,
+                                                  tr("Unable to save plaintext profiles."));
+                return;
+            }
+
+            AppSettings nextSettings = m_settings;
+            nextSettings.useSystemCredentialStore = false;
+            if (!m_store.saveSettings(nextSettings)) {
+                setCredentialOperationInProgress(false);
+                emit credentialMigrationFinished(false,
+                                                  tr("Unable to save credential store settings."));
+                return;
+            }
+
+            m_profiles = *migratedProfiles;
+            m_settings = nextSettings;
+            emit settingsChanged();
+            emit selectedProfileChanged();
+
+            deleteKeychainPasswords(0, [this](bool ok, const QString &error) {
+                setCredentialOperationInProgress(false);
                 if (!ok) {
-                    setCredentialOperationInProgress(false);
-                    emit credentialMigrationFinished(false, error);
+                    emit credentialMigrationFinished(
+                            false, tr("Plaintext storage is active, but some keychain entries could not be removed: %1")
+                                            .arg(error));
                     return;
                 }
-
-                m_profiles = *migratedProfiles;
-                m_settings.useSystemCredentialStore = false;
-                saveSettings();
-                saveProfiles();
-                setCredentialOperationInProgress(false);
-                emit settingsChanged();
-                emit selectedProfileChanged();
                 emit credentialMigrationFinished(true, QString());
             });
             return;

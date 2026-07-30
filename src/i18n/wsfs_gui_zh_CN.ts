@@ -454,7 +454,7 @@
     <message>
         <location filename="../SettingsWindow.qml" line="106"/>
         <source>Use system credential store</source>
-        <translation>使用系统提供的密码加密服务</translation>
+        <translation>使用系统凭据储存</translation>
     </message>
     <message>
         <location filename="../SettingsWindow.qml" line="123"/>

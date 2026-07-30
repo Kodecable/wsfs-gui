@@ -4,7 +4,23 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QSaveFile>
 #include <QStandardPaths>
+
+namespace {
+bool writeJsonFile(const QString &path, const QJsonDocument &document)
+{
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+        return false;
+
+    const QByteArray data = document.toJson(QJsonDocument::Indented);
+    if (file.write(data) != data.size())
+        return false;
+
+    return file.commit();
+}
+} // namespace
 
 QList<Profile> ProfileStore::loadProfiles() const
 {
@@ -44,26 +60,24 @@ AppSettings ProfileStore::loadSettings() const
     return settingsFromJson(document.object());
 }
 
-void ProfileStore::saveProfiles(const QList<Profile> &profiles, bool includePasswords) const
+bool ProfileStore::saveProfiles(const QList<Profile> &profiles, bool includePasswords) const
 {
-    QDir().mkpath(configDir());
+    if (!QDir().mkpath(configDir()))
+        return false;
 
     QJsonArray array;
     for (const Profile &profile : profiles)
         array.push_back(profileToJson(profile, includePasswords));
 
-    QFile file(profilesFilePath());
-    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
-        file.write(QJsonDocument(array).toJson(QJsonDocument::Indented));
+    return writeJsonFile(profilesFilePath(), QJsonDocument(array));
 }
 
-void ProfileStore::saveSettings(const AppSettings &settings) const
+bool ProfileStore::saveSettings(const AppSettings &settings) const
 {
-    QDir().mkpath(configDir());
+    if (!QDir().mkpath(configDir()))
+        return false;
 
-    QFile file(settingsFilePath());
-    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
-        file.write(QJsonDocument(settingsToJson(settings)).toJson(QJsonDocument::Indented));
+    return writeJsonFile(settingsFilePath(), QJsonDocument(settingsToJson(settings)));
 }
 
 QString ProfileStore::configDir() const

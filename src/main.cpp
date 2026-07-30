@@ -15,6 +15,8 @@ int main(int argc, char *argv[])
     QQuickStyle::setStyle(QStringLiteral("Basic"));
 
     QApplication app(argc, argv);
+    app.setObjectName("wsfs");
+    app.setApplicationName("wsfs-gui");
     app.setQuitOnLastWindowClosed(false);
     app.setWindowIcon(QIcon(QStringLiteral(":/assets/app-icon.png")));
 

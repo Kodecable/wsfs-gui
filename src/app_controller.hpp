@@ -93,8 +93,8 @@ private:
     Profile *findProfile(const QString &id);
     const Profile *findProfile(const QString &id) const;
     void refreshEnvironment();
-    void saveProfiles() const;
-    void saveSettings() const;
+    bool saveProfiles() const;
+    bool saveSettings() const;
     QString resolveWsfsExecutable() const;
     void prepareProfilePassword(const QString &profileId, std::function<void(bool, const QString &)> callback);
     void migratePlainTextToKeychain();
