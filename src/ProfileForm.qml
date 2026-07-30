@@ -467,21 +467,12 @@ Item {
                 Layout.fillWidth: true
             }
 
-            Rectangle {
-                Layout.columnSpan: 2
-                Layout.fillWidth: true
-                height: 1
-                color: Theme.border
-                visible: root.isWindows
-            }
-
             Label {
                 text: qsTr("Volume label")
                 horizontalAlignment: Text.AlignRight
                 visible: root.isWindows
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                color: Theme.textMuted
             }
             AppTextField {
                 id: volumeLabelField
@@ -496,7 +487,6 @@ Item {
                 visible: root.isWindows
                 Layout.preferredWidth: 160
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                color: Theme.textMuted
             }
             AppCheckBox {
                 id: masqueradeAsNtfsBox
