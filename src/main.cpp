@@ -8,6 +8,11 @@
 #include <QIcon>
 
 #include "app_controller.hpp"
+#include "kdsingleapplication.h"
+
+namespace {
+const QByteArray kActivateMessage("activate");
+}
 
 int main(int argc, char *argv[])
 {
@@ -19,6 +24,13 @@ int main(int argc, char *argv[])
     app.setApplicationName("wsfs-gui");
     app.setQuitOnLastWindowClosed(false);
     app.setWindowIcon(QIcon(QStringLiteral(":/assets/app-icon.png")));
+
+    KDSingleApplication singleInstance(app.applicationName());
+    if (!singleInstance.isPrimaryInstance()) {
+        if (!singleInstance.sendMessageWithTimeout(kActivateMessage, 1000))
+            qWarning() << "Unable to notify the primary wsfs-gui instance";
+        return 0;
+    }
 
     QTranslator translator;
     const QLocale locale = QLocale::system();
@@ -32,6 +44,15 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     AppController controller;
+
+    QObject::connect(
+        &singleInstance,
+        &KDSingleApplication::messageReceived,
+        &controller,
+        [&controller](const QByteArray &message) {
+            if (message == kActivateMessage)
+                controller.showMainWindow();
+        });
 
     engine.setInitialProperties({{QStringLiteral("appModel"), QVariant::fromValue(&controller)}});
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));

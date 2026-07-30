@@ -81,6 +81,24 @@ target("qtkeychain")
         add_frameworks("Foundation", "Security")
     end
 
+target("kdsingleapplication")
+    set_kind("static")
+    set_languages("cxx17")
+    add_rules("qt.static")
+    add_frameworks("QtCore", "QtNetwork", {public = true})
+
+    add_defines("KDSINGLEAPPLICATION_STATIC_BUILD", {public = true})
+    add_includedirs("3rdparty/KDSingleApplication/src", {public = true})
+
+    add_headerfiles("3rdparty/KDSingleApplication/src/kdsingleapplication.h")
+    add_headerfiles("3rdparty/KDSingleApplication/src/kdsingleapplication_lib.h")
+    add_headerfiles("3rdparty/KDSingleApplication/src/kdsingleapplication_localsocket_p.h")
+    add_files("3rdparty/KDSingleApplication/src/kdsingleapplication.h")
+    add_files("3rdparty/KDSingleApplication/src/kdsingleapplication_lib.h")
+    add_files("3rdparty/KDSingleApplication/src/kdsingleapplication_localsocket_p.h")
+    add_files("3rdparty/KDSingleApplication/src/kdsingleapplication.cpp")
+    add_files("3rdparty/KDSingleApplication/src/kdsingleapplication_localsocket.cpp")
+
 target("wsfs-gui")
     set_default(true)
     set_version("0.1.0")
@@ -89,7 +107,7 @@ target("wsfs-gui")
     add_rules("auto_qrc", "qt.quickapp")
     add_frameworks("QtCore", "QtGui", "QtQml", "QtQuick", "QtQuickControls2", "QtWidgets")
 
-    add_deps("qtkeychain")
+    add_deps("qtkeychain", "kdsingleapplication")
     add_defines("QTKEYCHAIN_NO_EXPORT")
     if is_plat("linux") then
         add_frameworks("QtDBus")
