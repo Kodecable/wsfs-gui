@@ -37,11 +37,3 @@ Source: "@STAGE_DIR@\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs c
 
 [Icons]
 Name: "{autoprograms}\WSFS GUI"; Filename: "{app}\wsfs-gui.exe"; WorkingDir: "{app}"; Comment: "WSFS GUI"; IconFilename: "{app}\wsfs-gui.exe"
-
-[InstallDelete]
-Type: files; Name: "{app}\WSFS-GUI-MaintenanceTool.exe"
-Type: files; Name: "{app}\maintenancetool.dat"
-Type: files; Name: "{app}\installer.dat"
-Type: files; Name: "{app}\components.xml"
-Type: files; Name: "{app}\network.xml"
-Type: filesandordirs; Name: "{app}\installerResources"

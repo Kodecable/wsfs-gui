@@ -110,24 +110,37 @@ jobs:
           aqt install-qt windows desktop 6.11.1 win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
           if ($LASTEXITCODE -ne 0) { throw "Installing Qt SDK failed" }
           Add-Content -Path $env:GITHUB_ENV -Value "WSFS_GUI_QT_ROOT=$env:RUNNER_TEMP/Qt"
-      - name: Install Inno Setup
+      - uses: xmake-io/github-action-setup-xmake@v1
+      - name: Install Inno Setup 7
         shell: pwsh
         run: |
-          choco install innosetup --no-progress -y
-          if ($LASTEXITCODE -ne 0) { throw "Installing Inno Setup failed" }
-          $innoDir = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6"
-          $iscc = Join-Path $innoDir "ISCC.exe"
-          if (-not (Test-Path $iscc)) { throw "ISCC.exe was not found under $innoDir" }
-          Add-Content -Path $env:GITHUB_PATH -Value $innoDir
+          $innoVersion = "7.0.2"
+          $innoInstaller = Join-Path $env:RUNNER_TEMP "innosetup-$innoVersion-x64.exe"
+          $innoRoot = Join-Path $env:RUNNER_TEMP "inno7"
+          Invoke-WebRequest `
+            -Uri "https://github.com/jrsoftware/issrc/releases/download/is-7_0_2/innosetup-$innoVersion-x64.exe" `
+            -OutFile $innoInstaller
+          $arguments = @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/DIR=$innoRoot"
+          )
+          $process = Start-Process -FilePath $innoInstaller -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installing Inno Setup 7 failed with code $($process.ExitCode)" }
+          $iscc = Join-Path $innoRoot "ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "Inno Setup 7 ISCC.exe was not found at $iscc" }
           (Get-Item $iscc).VersionInfo.ProductVersion
-      - uses: xmake-io/github-action-setup-xmake@v1
+          Add-Content -Path $env:GITHUB_ENV -Value "WSFS_GUI_INNO_ROOT=$innoRoot"
       - name: Build Windows installer
         shell: pwsh
         run: |
           release/windows/build-installer.ps1 `
             -GuiVersion "${{ needs.resolve.outputs.version }}" `
             -CoreTag "${{ needs.resolve.outputs.core_tag }}" `
-            -QtRoot "$env:WSFS_GUI_QT_ROOT"
+            -QtRoot "$env:WSFS_GUI_QT_ROOT" `
+            -InnoSetupRoot "$env:WSFS_GUI_INNO_ROOT"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer

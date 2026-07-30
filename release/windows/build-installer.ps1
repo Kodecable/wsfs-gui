@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)] [string]$GuiVersion,
     [Parameter(Mandatory = $true)] [string]$CoreTag,
-    [Parameter(Mandatory = $true)] [string]$QtRoot
+    [Parameter(Mandatory = $true)] [string]$QtRoot,
+    [Parameter(Mandatory = $true)] [string]$InnoSetupRoot
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,28 +15,6 @@ function Find-Tool([string]$Root, [string]$Name) {
     return $tool.FullName
 }
 
-function Find-InnoCompiler() {
-    $candidates = @()
-    if ($env:ProgramFiles) {
-        $candidates += (Join-Path $env:ProgramFiles "Inno Setup 6\ISCC.exe")
-    }
-    if (${env:ProgramFiles(x86)}) {
-        $candidates += (Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe")
-    }
-
-    foreach ($candidate in $candidates) {
-        if (Test-Path $candidate) {
-            return (Resolve-Path $candidate).Path
-        }
-    }
-
-    $command = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
-    if ($null -ne $command) {
-        return $command.Source
-    }
-
-    throw "Unable to find ISCC.exe. Install Inno Setup 6 or add ISCC.exe to PATH."
-}
 
 function Quote-InnoPath([string]$Path) {
     return '"' + $Path.Replace('"', '""') + '"'
@@ -83,7 +62,12 @@ function Test-StagedApplication([string]$StageDir, [string]$ArtifactDir) {
 
 $windeployqt = Find-Tool $QtRoot "windeployqt.exe"
 $qmake = Find-Tool $QtRoot "qmake.exe"
-$iscc = Find-InnoCompiler
+$iscc = Join-Path $InnoSetupRoot "ISCC.exe"
+if (-not (Test-Path $iscc -PathType Leaf)) {
+    throw "Inno Setup compiler was not found at $iscc"
+}
+$iscc = (Resolve-Path $iscc).Path
+Write-Host ("Using Inno Setup compiler {0}: {1}" -f (Get-Item $iscc).VersionInfo.ProductVersion, $iscc)
 $qtSdkDir = $qmake.Directory.Parent.FullName
 $qtVersion = (& $qmake -query QT_VERSION).Trim()
 if ([string]::IsNullOrWhiteSpace($qtVersion)) {
@@ -139,6 +123,7 @@ $scriptContent = $scriptContent.Replace("@SETUP_ICON_FILE@", (Quote-InnoPath (Jo
 $scriptContent = $scriptContent.Replace("@INSTALLER_OUTPUT_DIR@", (Quote-InnoPath $installerDir))
 $scriptContent = $scriptContent.Replace("@INSTALLER_OUTPUT_BASE@", "WSFS-GUI-Installer-$GuiVersion-win64")
 Set-Content -Path $scriptPath -Value $scriptContent -NoNewline
+Write-Host "Generated Inno Setup script at $scriptPath"
 
 & $iscc $scriptPath
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
