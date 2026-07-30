@@ -4,6 +4,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QIcon>
 #include <QMenu>
 #include <QSettings>
@@ -19,6 +20,27 @@ SystemIntegration::~SystemIntegration()
 {
     delete m_trayMenu;
 }
+
+namespace {
+QString desktopExecArgument(const QString &path)
+{
+    QString escaped = path;
+    escaped.replace('\\', QStringLiteral("\\\\"));
+    escaped.replace('"', QStringLiteral("\\\""));
+    return QStringLiteral("\"") + escaped + QStringLiteral("\"");
+}
+
+QString linuxStartupExecutable()
+{
+    // In an AppImage, applicationFilePath() points into the temporary mount.
+    // APPIMAGE points to the persistent AppImage file that can be launched at login.
+    const QString appImagePath = qEnvironmentVariable("APPIMAGE").trimmed();
+    if (!appImagePath.isEmpty() && QFileInfo::exists(appImagePath) && QFileInfo(appImagePath).isFile())
+        return appImagePath;
+
+    return QCoreApplication::applicationFilePath();
+}
+} // namespace
 
 void SystemIntegration::setupTray()
 {
@@ -68,7 +90,7 @@ void SystemIntegration::applyAutoStart(bool enabled)
         "Name=WSFS Mount Manager\n"
         "Exec=%1\n"
         "Terminal=false\n"
-        "X-GNOME-Autostart-enabled=true\n").arg(QCoreApplication::applicationFilePath());
+        "X-GNOME-Autostart-enabled=true\n").arg(desktopExecArgument(linuxStartupExecutable()));
     file.write(desktop.toUtf8());
 #elif defined(Q_OS_WIN)
     QSettings runKey("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);

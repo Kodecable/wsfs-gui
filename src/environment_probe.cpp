@@ -8,6 +8,15 @@
 #include <QStandardPaths>
 
 namespace {
+bool isExecutableFile(const QString &path)
+{
+    if (path.isEmpty())
+        return false;
+
+    const QFileInfo info(path);
+    return info.exists() && info.isFile() && info.isExecutable();
+}
+
 #if defined(Q_OS_WIN)
 QString winfspDllNameForArch()
 {
@@ -89,9 +98,23 @@ QString EnvironmentProbe::resolveWsfsExecutable(const QString &configuredPath)
     const QString localName = QStringLiteral("wsfs");
 #endif
 
-    const QString localPath = QDir(QCoreApplication::applicationDirPath()).filePath(localName);
-    const QFileInfo localInfo(localPath);
-    if (localInfo.exists() && localInfo.isFile() && localInfo.isExecutable())
+    const QString applicationDir = QCoreApplication::applicationDirPath();
+
+#if defined(Q_OS_LINUX)
+    const QString appImageDir = qEnvironmentVariable("APPDIR").trimmed();
+    if (!appImageDir.isEmpty()) {
+        const QString bundledPath = QDir(appImageDir).filePath(QStringLiteral("shared/bin/%1").arg(localName));
+        if (isExecutableFile(bundledPath))
+            return bundledPath;
+
+        const QString legacyBundledPath = QDir(appImageDir).filePath(QStringLiteral("bin/%1").arg(localName));
+        if (isExecutableFile(legacyBundledPath))
+            return legacyBundledPath;
+    }
+#endif
+
+    const QString localPath = QDir(applicationDir).filePath(localName);
+    if (isExecutableFile(localPath))
         return localPath;
 
     QString fromPath = QStandardPaths::findExecutable(QStringLiteral("wsfs"));
