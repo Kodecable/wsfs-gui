@@ -71,6 +71,8 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: Build the Arch packaging image
         uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
         with:
           context: .
           file: release/linux/Containerfile
@@ -151,8 +153,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
+        name: Download Linux AppImage
         with:
-          path: release-assets
+          name: linux-appimage
+          path: release-assets/linux-appimage
+      - uses: actions/download-artifact@v4
+        name: Download Windows installer
+        with:
+          name: windows-installer
+          path: release-assets/windows-installer
       - name: Create checksums
         shell: bash
         run: |
