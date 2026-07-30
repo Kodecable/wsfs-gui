@@ -18,8 +18,9 @@ on:
         required: true
         type: string
       release_tag:
-        description: Tag for the draft GUI GitHub Release
-        required: true
+        description: Optional tag for the draft GUI GitHub Release; leave empty to publish artifacts only
+        required: false
+        default: ''
         type: string
 
 permissions:
@@ -53,7 +54,10 @@ jobs:
             version="${{ inputs.version }}"
             core_tag="${{ inputs.wsfs_core_tag }}"
             release_tag="${{ inputs.release_tag }}"
-            [[ "${release_tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'release_tag must be vX.Y.Z' >&2; exit 1; }
+            if [[ -n "${release_tag}" && ! "${release_tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo 'release_tag must be empty or vX.Y.Z' >&2
+              exit 1
+            fi
           fi
           echo "ref=${ref}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
@@ -150,6 +154,7 @@ jobs:
 
   create-draft-release:
     needs: [resolve, linux-appimage, windows-installer]
+    if: needs.resolve.outputs.release_tag != ''
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
