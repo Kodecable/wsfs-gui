@@ -2,6 +2,44 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>AppTextContextMenu</name>
+    <message>
+        <location filename="../ui/controls/AppTextContextMenu.qml" line="8"/>
+        <source>Undo</source>
+        <translation>撤销</translation>
+    </message>
+    <message>
+        <location filename="../ui/controls/AppTextContextMenu.qml" line="14"/>
+        <source>Redo</source>
+        <translation>重做</translation>
+    </message>
+    <message>
+        <location filename="../ui/controls/AppTextContextMenu.qml" line="21"/>
+        <source>Cut</source>
+        <translation>剪切</translation>
+    </message>
+    <message>
+        <location filename="../ui/controls/AppTextContextMenu.qml" line="28"/>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location filename="../ui/controls/AppTextContextMenu.qml" line="35"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location filename="../ui/controls/AppTextContextMenu.qml" line="42"/>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location filename="../ui/controls/AppTextContextMenu.qml" line="51"/>
+        <source>Select All</source>
+        <translation>全选</translation>
+    </message>
+</context>
+<context>
     <name>AppController</name>
     <message>
         <location filename="../app_controller.cpp" line="139"/>

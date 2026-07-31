@@ -15,6 +15,10 @@ TextField {
     topPadding: 9
     bottomPadding: 9
 
+    ContextMenu.menu: AppTextContextMenu {
+        editor: root
+    }
+
     background: Rectangle {
         radius: Theme.radiusMedium
         border.width: 1

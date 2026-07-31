@@ -80,6 +80,8 @@ Window {
                     property string _logTick: root.hasModel && root.appModel ? root.appModel.logs : ""
                     font.family: "monospace"
                     color: Theme.text
+                    selectedTextColor: Theme.surfaceRaised
+                    selectionColor: Theme.accent
                     width: Math.max(0, logScroll.width - 16)
                     padding: 14
                     text: {
@@ -94,6 +96,9 @@ Window {
                     }
                     readOnly: true
                     wrapMode: Text.WrapAnywhere
+                    ContextMenu.menu: AppTextContextMenu {
+                        editor: logMirror
+                    }
                     background: Rectangle {
                         color: Theme.surface
                         radius: Theme.radiusMedium

@@ -29,6 +29,10 @@ SpinBox {
         validator: root.validator
         inputMethodHints: Qt.ImhFormattedNumbersOnly
         padding: 0
+
+        ContextMenu.menu: AppTextContextMenu {
+            editor: parent
+        }
     }
 
     down.indicator: Rectangle {
