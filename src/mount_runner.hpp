@@ -40,11 +40,14 @@ public:
 signals:
     void stateChanged();
     void logLine(const QString &profileId, const QString &line);
+    void allStopped();
 
 private:
     struct Runtime {
         QProcess *process = nullptr;
         QTimer *retryTimer = nullptr;
+        QTimer *stopTimer = nullptr;
+        QProcess *forceUnmountProcess = nullptr;
         QString state = "Stopped";
         QString lastError;
         int retryDelaySec = 1;
@@ -52,12 +55,16 @@ private:
         qint64 fuseConnectionId = -1;
         QByteArray standardOutputBuffer;
         bool stopRequested = false;
+        bool stopQuietly = false;
+        bool restartAfterStop = false;
     };
 
     Profile *profileFor(const QString &profileId) const;
     QString resolvedExecutable() const;
     void scheduleRetry(const QString &profileId);
     void clearRetry(const QString &profileId);
+    void handleStopTimeout(const QString &profileId);
+    void emitAllStoppedIfReady();
     void ensureProcess(const QString &profileId, Runtime &runtime);
     void handleStandardOutput(const QString &profileId, Runtime &runtime);
     void forceUnmount(const QString &profileId, Runtime &runtime, const Profile &profile);
@@ -66,4 +73,5 @@ private:
     ProfileLookup m_profileLookup;
     ExecutableResolver m_executableResolver;
     bool m_isQuitting = false;
+    bool m_stopAllPending = false;
 };

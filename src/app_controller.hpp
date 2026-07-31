@@ -113,4 +113,5 @@ private:
     SystemIntegration m_system;
     QQuickWindow *m_mainWindow = nullptr;
     bool m_credentialOperationInProgress = false;
+    bool m_quitPending = false;
 };

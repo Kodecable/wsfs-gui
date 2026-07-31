@@ -23,6 +23,12 @@ AppController::AppController(QObject *parent)
         emit profilesChanged();
         emit selectedProfileChanged();
     });
+    connect(&m_runner, &MountRunner::allStopped, this, [this]() {
+        if (!m_quitPending)
+            return;
+        m_quitPending = false;
+        QCoreApplication::quit();
+    });
     connect(&m_runner, &MountRunner::logLine, this, [this](const QString &profileId, const QString &line) {
         m_logs.append(line, profileId);
         emit logsChanged();
@@ -341,9 +347,12 @@ void AppController::showMainWindow()
 
 void AppController::quitApp()
 {
+    if (m_quitPending)
+        return;
+
     m_runner.setQuitting(true);
+    m_quitPending = true;
     stopAll();
-    QCoreApplication::quit();
 }
 
 void AppController::setAutoStartOnBoot(bool enabled)

@@ -72,6 +72,9 @@ void MountRunner::startProfile(const QString &profileId)
     runtime.state = "Starting";
     runtime.lastError.clear();
     runtime.stopRequested = false;
+    runtime.stopQuietly = false;
+    runtime.restartAfterStop = false;
+    if (runtime.stopTimer) runtime.stopTimer->stop();
     runtime.fuseConnectionId = -1;
     runtime.standardOutputBuffer.clear();
     emit stateChanged();
@@ -126,48 +129,64 @@ void MountRunner::stopProfile(const QString &profileId, bool quitting)
     if (!runtime.process || runtime.process->state() == QProcess::NotRunning)
     {
         runtime.state = "Stopped";
+        runtime.stopRequested = false;
+        runtime.stopQuietly = false;
         emit stateChanged();
+        emitAllStoppedIfReady();
         return;
     }
 
+    if (runtime.stopRequested)
+        return;
+
     runtime.state = "Stopping";
     runtime.stopRequested = true;
+    runtime.stopQuietly = quitting;
     emit stateChanged();
+
+    if (!runtime.stopTimer)
+    {
+        runtime.stopTimer = new QTimer(this);
+        runtime.stopTimer->setSingleShot(true);
+        connect(runtime.stopTimer, &QTimer::timeout, this, [this, profileId]() {
+            handleStopTimeout(profileId);
+        });
+    }
+    runtime.stopTimer->start(kStopGraceMs);
 
 #if defined(Q_OS_WIN)
     runtime.process->kill();
-    runtime.process->waitForFinished(kKillWaitMs);
 #else
     runtime.process->terminate();
-    if (!runtime.process->waitForFinished(kStopGraceMs))
-    {
-        Profile *profile = profileFor(profileId);
-        if (profile) forceUnmount(profileId, runtime, *profile);
-        runtime.process->kill();
-        runtime.process->waitForFinished(kKillWaitMs);
-    }
 #endif
-
-    runtime.state = "Stopped";
-    if (!quitting) emit logLine(profileId, QStringLiteral("mount stopped"));
-    emit stateChanged();
 }
 
 void MountRunner::stopAll(const QList<Profile> &profiles, bool quitting)
 {
+    m_stopAllPending = true;
     for (const Profile &profile : profiles) stopProfile(profile.id, quitting);
+    emitAllStoppedIfReady();
 }
 
 void MountRunner::removeProfile(const QString &profileId)
 {
     clearRetry(profileId);
     Runtime runtime = m_runtime.take(profileId);
+    if (runtime.stopTimer) runtime.stopTimer->stop();
     if (runtime.process)
     {
         if (runtime.process->state() != QProcess::NotRunning) runtime.process->kill();
         runtime.process->deleteLater();
     }
+    if (runtime.forceUnmountProcess)
+    {
+        if (runtime.forceUnmountProcess->state() != QProcess::NotRunning)
+            runtime.forceUnmountProcess->kill();
+        runtime.forceUnmountProcess->deleteLater();
+    }
     if (runtime.retryTimer) runtime.retryTimer->deleteLater();
+    if (runtime.stopTimer) runtime.stopTimer->deleteLater();
+    emitAllStoppedIfReady();
 }
 
 void MountRunner::setQuitting(bool quitting) { m_isQuitting = quitting; }
@@ -203,6 +222,39 @@ void MountRunner::clearRetry(const QString &profileId)
     runtime.retryDelaySec = 1;
 }
 
+void MountRunner::handleStopTimeout(const QString &profileId)
+{
+    auto it = m_runtime.find(profileId);
+    if (it == m_runtime.end())
+        return;
+
+    Runtime &runtime = it.value();
+    if (!runtime.stopRequested || !runtime.process || runtime.process->state() == QProcess::NotRunning)
+        return;
+
+    Profile *profile = profileFor(profileId);
+    if (profile)
+        forceUnmount(profileId, runtime, *profile);
+    runtime.process->kill();
+}
+
+void MountRunner::emitAllStoppedIfReady()
+{
+    if (!m_stopAllPending)
+        return;
+
+    for (const Runtime &runtime : std::as_const(m_runtime))
+    {
+        if (runtime.process && runtime.process->state() != QProcess::NotRunning)
+            return;
+        if (runtime.forceUnmountProcess && runtime.forceUnmountProcess->state() != QProcess::NotRunning)
+            return;
+    }
+
+    m_stopAllPending = false;
+    emit allStopped();
+}
+
 void MountRunner::ensureProcess(const QString &profileId, Runtime &runtime)
 {
     if (runtime.process) return;
@@ -234,17 +286,30 @@ void MountRunner::ensureProcess(const QString &profileId, Runtime &runtime)
                 Profile *profile = profileFor(profileId);
                 Runtime &rt = m_runtime[profileId];
                 const bool requestedStop = rt.stopRequested;
+                const bool stopQuietly = rt.stopQuietly;
                 rt.stopRequested = false;
+                rt.stopQuietly = false;
+                if (rt.stopTimer) rt.stopTimer->stop();
                 const bool ranLongEnough =
                     (QDateTime::currentMSecsSinceEpoch() - rt.runningSinceMs) >= (kRetryResetRunThresholdSec * 1000LL);
                 if (ranLongEnough) rt.retryDelaySec = 1;
 
-                const bool gracefulRequestedExit = requestedStop && status == QProcess::NormalExit && exitCode == 0;
-                if (gracefulRequestedExit)
+                if (requestedStop)
                 {
                     rt.lastError.clear();
                     rt.state = "Stopped";
+                    if (!stopQuietly)
+                        emit logLine(profileId, QStringLiteral("mount stopped"));
                     emit stateChanged();
+
+                    if (profile && profile->enabled && !m_isQuitting)
+                    {
+                        if (rt.forceUnmountProcess)
+                            rt.restartAfterStop = true;
+                        else
+                            ensureDesiredState(profileId);
+                    }
+                    emitAllStoppedIfReady();
                     return;
                 }
 
@@ -265,6 +330,7 @@ void MountRunner::ensureProcess(const QString &profileId, Runtime &runtime)
                     rt.state = "Stopped";
                 }
                 emit stateChanged();
+                emitAllStoppedIfReady();
             });
 }
 
@@ -317,7 +383,8 @@ void MountRunner::handleStandardOutput(const QString &profileId, Runtime &runtim
 void MountRunner::forceUnmount(const QString &profileId, Runtime &runtime, const Profile &profile)
 {
 #if defined(Q_OS_LINUX)
-    if (profile.directMount || runtime.fuseConnectionId <= 0) return;
+    if (profile.directMount || runtime.fuseConnectionId <= 0 || runtime.forceUnmountProcess)
+        return;
 
     emit logLine(profileId, QStringLiteral("mount did not exit gracefully; forcing FUSE abort and lazy unmount"));
     const QString abortPath = QStringLiteral("/sys/fs/fuse/connections/%1/abort").arg(runtime.fuseConnectionId);
@@ -334,25 +401,64 @@ void MountRunner::forceUnmount(const QString &profileId, Runtime &runtime, const
         emit logLine(profileId, QStringLiteral("failed to open FUSE abort endpoint: %1").arg(abortFile.errorString()));
     }
 
-    QProcess fusermount;
-    fusermount.start(QStringLiteral("fusermount3"), {QStringLiteral("-uz"), profile.mountPoint});
-    if (!fusermount.waitForStarted(kKillWaitMs))
-    {
-        emit logLine(profileId, QStringLiteral("failed to start fusermount3: %1").arg(fusermount.errorString()));
-        return;
-    }
-    if (!fusermount.waitForFinished(kKillWaitMs))
-    {
-        fusermount.kill();
-        fusermount.waitForFinished(kKillWaitMs);
+    QProcess *fusermount = new QProcess(this);
+    runtime.forceUnmountProcess = fusermount;
+    connect(fusermount, &QProcess::errorOccurred, this,
+            [this, profileId, fusermount](QProcess::ProcessError error) {
+                if (error != QProcess::FailedToStart)
+                    return;
+
+                auto it = m_runtime.find(profileId);
+                if (it == m_runtime.end() || it.value().forceUnmountProcess != fusermount)
+                    return;
+
+                Runtime &runtime = it.value();
+                emit logLine(profileId, QStringLiteral("failed to start fusermount3: %1").arg(fusermount->errorString()));
+                runtime.forceUnmountProcess = nullptr;
+                const bool restart = runtime.restartAfterStop && profileFor(profileId) &&
+                                     profileFor(profileId)->enabled && !m_isQuitting;
+                runtime.restartAfterStop = false;
+                fusermount->deleteLater();
+                if (restart)
+                    ensureDesiredState(profileId);
+                emitAllStoppedIfReady();
+            });
+    connect(fusermount, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
+            [this, profileId, fusermount](int exitCode, QProcess::ExitStatus status) {
+                auto it = m_runtime.find(profileId);
+                if (it == m_runtime.end() || it.value().forceUnmountProcess != fusermount)
+                    return;
+
+                Runtime &runtime = it.value();
+                runtime.forceUnmountProcess = nullptr;
+                if (status != QProcess::NormalExit || exitCode != 0)
+                    emit logLine(profileId, QStringLiteral("fusermount3 failed: %1")
+                                             .arg(QString::fromUtf8(fusermount->readAllStandardError()).trimmed()));
+                else
+                    emit logLine(profileId, QStringLiteral("force-unmounted %1").arg(profileFor(profileId)
+                                                                                          ? profileFor(profileId)->mountPoint
+                                                                                          : QString()));
+
+                const bool restart = runtime.restartAfterStop && profileFor(profileId) &&
+                                     profileFor(profileId)->enabled && !m_isQuitting;
+                runtime.restartAfterStop = false;
+                fusermount->deleteLater();
+                if (restart)
+                    ensureDesiredState(profileId);
+                emitAllStoppedIfReady();
+            });
+
+    fusermount->start(QStringLiteral("fusermount3"), {QStringLiteral("-uz"), profile.mountPoint});
+    QTimer::singleShot(kKillWaitMs, this, [this, profileId, fusermount]() {
+        auto it = m_runtime.find(profileId);
+        if (it == m_runtime.end() || it.value().forceUnmountProcess != fusermount)
+            return;
+        if (fusermount->state() == QProcess::NotRunning)
+            return;
+
+        fusermount->kill();
         emit logLine(profileId, QStringLiteral("fusermount3 timed out"));
-        return;
-    }
-    if (fusermount.exitStatus() != QProcess::NormalExit || fusermount.exitCode() != 0)
-        emit logLine(profileId, QStringLiteral("fusermount3 failed: %1")
-                                    .arg(QString::fromUtf8(fusermount.readAllStandardError()).trimmed()));
-    else
-        emit logLine(profileId, QStringLiteral("force-unmounted %1").arg(profile.mountPoint));
+    });
 #else
     Q_UNUSED(profileId)
     Q_UNUSED(runtime)
