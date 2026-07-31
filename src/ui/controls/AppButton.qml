@@ -35,6 +35,7 @@ Button {
                 width: 18
                 height: 18
                 fillMode: Image.PreserveAspectFit
+                opacity: root.enabled ? 1.0 : 0.45
             }
 
             Text {
