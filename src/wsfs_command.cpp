@@ -33,6 +33,7 @@ QStringList buildWsfsMountArgs(const Profile &profile)
     args << "--level" << profile.logLevel;
     args << "--no-log-time";
     args << "--no-log-color";
+    args << "--json-log";
     if (profile.structTimeout >= 0)
         args << "--struct-timeout" << QString::number(profile.structTimeout);
     if (!profile.password.isEmpty())
@@ -43,12 +44,8 @@ QStringList buildWsfsMountArgs(const Profile &profile)
         args << "--cert-hash" << profile.certHash;
 
 #if defined(Q_OS_LINUX)
-    args << "--json-log";
     if (!profile.flockMode.isEmpty())
         args << "--flock" << profile.flockMode;
-#endif
-
-#if defined(Q_OS_LINUX)
     if (profile.directMount)
         args << "--direct-mount";
     if (profile.uid >= 0)
