@@ -1,6 +1,6 @@
 # WSFS-GUI
 
-WSFS-GUI is a graphical interface for [WSFS-Core](https://github.com/Kodecable/wsfs-core), available for Windows and Linux.
+WSFS-GUI is a graphical front end for the [WSFS-Core](https://github.com/Kodecable/wsfs-core) client, available on Windows and Linux.
 
 Prebuilt x64 releases are available from the [latest release page](https://github.com/Kodecable/wsfs-gui/releases/latest).
 

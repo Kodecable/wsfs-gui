@@ -35,5 +35,9 @@ Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.i
 [Files]
 Source: "@STAGE_DIR@\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
 [Icons]
-Name: "{autoprograms}\WSFS GUI"; Filename: "{app}\wsfs-gui.exe"; WorkingDir: "{app}"; Comment: "WSFS GUI"; IconFilename: "{app}\wsfs-gui.exe"
+Name: "{userprograms}\WSFS GUI"; Filename: "{app}\wsfs-gui.exe"; WorkingDir: "{app}"; Comment: "WSFS GUI"; IconFilename: "{app}\wsfs-gui.exe"
+Name: "{userdesktop}\WSFS GUI"; Filename: "{app}\wsfs-gui.exe"; WorkingDir: "{app}"; Comment: "WSFS GUI"; IconFilename: "{app}\wsfs-gui.exe"; Tasks: desktopicon
